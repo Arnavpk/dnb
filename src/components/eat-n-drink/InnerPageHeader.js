@@ -1,36 +1,41 @@
 "use client";
 
-// ─────────────────────────────────────────────
-// CMS-ready content object — swap with Strapi
-// ─────────────────────────────────────────────
-const content = {
-    title: "Eat & Drink at Dave & Buster's Bangalore",
-    description:
-        "Discover an experience where gaming meets gourmet at Dave & Buster's Bangalore.",
-    // Set these to your actual image URLs from Strapi/CDN
-    backgroundImageDesktop: "",
-    backgroundImageMobile: "",
-};
+import { getStrapiMedia } from "@/lib/strapi";
 
-// ─────────────────────────────────────────────
-// Inner Page Header Component
-// ─────────────────────────────────────────────
-export default function InnerPageHeader() {
-    const hasBg = !!content.backgroundImageDesktop;
+// ─── Normalize Strapi hero section → unified shape ────────────────────────────
+// Strapi shared.hero-section schema: { title, subtitle, background_image(media[]) }
+function normalizeHeroSection(section, cityName) {
+    if (!section) return {
+        title: `Eat & Drink at Dave & Buster's ${cityName}`,
+        description: `Discover an experience where gaming meets gourmet at Dave & Buster's ${cityName}.`,
+        backgroundImageDesktop: "",
+    };
+
+    return {
+        title: section.title ?? `Eat & Drink at Dave & Buster's ${cityName}`,
+        description: section.subtitle ?? `Discover an experience where gaming meets gourmet at Dave & Buster's ${cityName}.`,
+        backgroundImageDesktop: getStrapiMedia(section.background_image) ?? "",
+    };
+}
+
+// ─── InnerPageHeader ──────────────────────────────────────────────────────────
+// Props:
+//   section  — Strapi shared.hero-section from getHeroSection() in page.js
+//   location — location slug from params (e.g. "bangalore", "mumbai")
+export default function InnerPageHeader({ section = null, location = "" }) {
+    const cityName = location.charAt(0).toUpperCase() + location.slice(1);
+    const { title, description, backgroundImageDesktop } = normalizeHeroSection(section, cityName);
+    const hasBg = !!backgroundImageDesktop;
 
     return (
         <section
             className="relative bg-[#15189a] text-white overflow-hidden"
-        // style={
-        //     hasBg
-        //         ? { backgroundImage: `url('${content.backgroundImageDesktop}')` }
-        //         : {}
-        // }
+            style={hasBg ? { backgroundImage: `url('${backgroundImageDesktop}')` } : {}}
         >
             {/* Background image overlay (when image present) */}
-            {/* {hasBg && (
+            {hasBg && (
                 <div className="absolute inset-0 bg-black/50 pointer-events-none" />
-            )} */}
+            )}
 
             {/* Content */}
             <div className="relative z-10 max-w-screen-xl mx-auto px-6 py-16 md:py-24 lg:py-28">
@@ -39,12 +44,12 @@ export default function InnerPageHeader() {
                         className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight max-w-3xl uppercase"
                         style={{ fontFamily: '"Libre Franklin", sans-serif' }}
                     >
-                        {content.title}
+                        {title}
                     </h1>
 
-                    {content.description && (
+                    {description && (
                         <p className="text-lg md:text-xl text-white/90 leading-relaxed max-w-2xl">
-                            {content.description}
+                            {description}
                         </p>
                     )}
                 </div>

@@ -3,9 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { getStrapiMedia } from "@/lib/strapi";
 
-// ─── CMS-ready content object ────────────────────────────────────────────────
-const content = {
+// ─── Fallback content — used when Strapi has no tab section data yet ──────────
+const FALLBACK = {
     heading: "HOW DO YOU D&B?",
     subheading: "Why choose when you can have it all in one place",
     tabs: [
@@ -90,6 +91,38 @@ const content = {
     ],
 };
 
+// ─── Normalize Strapi tab section → unified shape ─────────────────────────────
+// Strapi shared.tab-section schema:
+//   { title, subtitle, tabs: tab-item[] }
+// Strapi shared.tab-item schema:
+//   { label, heading, description, tab_card: tab-card[] }
+// Strapi shared.tab-card schema:
+//   { title, description, image(media[]), cta_text, cta_link }
+function normalizeTabSection(section) {
+    if (!section?.tabs?.length) return FALLBACK;
+
+    return {
+        heading: section.title ?? FALLBACK.heading,
+        subheading: section.subtitle ?? FALLBACK.subheading,
+        tabs: section.tabs.map((tab, tabIndex) => ({
+            id: tab.id ?? `tab-${tabIndex}`,
+            label: tab.label ?? `Tab ${tabIndex + 1}`,
+            headline: tab.heading ?? "",
+            description: tab.description ?? "",
+            cards: (tab.tab_card ?? []).map((card, cardIndex) => ({
+                id: card.id ?? `card-${tabIndex}-${cardIndex}`,
+                image: getStrapiMedia(card.image) ?? "",
+                title: card.title ?? "",
+                body: card.description ?? "",
+                cta: {
+                    label: card.cta_text ?? "Learn More",
+                    href: card.cta_link ?? "#",
+                },
+            })),
+        })),
+    };
+}
+
 // ─── Card sub-component ───────────────────────────────────────────────────────
 function TabCard({ card }) {
     return (
@@ -108,13 +141,10 @@ function TabCard({ card }) {
                 <p className="mt-3 text-[#15189a] text-sm leading-relaxed flex-1">
                     {card.body}
                 </p>
-                {/* FIX: btn-primary = linear-gradient(180deg, #040651, #15189a) — NOT flat bg-[#15189a] */}
                 <Link
                     href={card.cta.href}
                     className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 rounded-[50px] text-white text-sm font-bold uppercase tracking-wide transition-all self-start"
                     style={{ background: "linear-gradient(180deg, #040651, #15189a)" }}
-                // onMouseEnter={(e) => (e.currentTarget.style.background = "linear-gradient(180deg, #15189a, #040651)")}
-                // onMouseLeave={(e) => (e.currentTarget.style.background = "linear-gradient(180deg, #040651, #15189a)")}
                 >
                     {card.cta.label}
                     <ArrowRight size={14} strokeWidth={2.5} />
@@ -124,27 +154,28 @@ function TabCard({ card }) {
     );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-export default function HowDoYouDnB() {
-    const [activeTab, setActiveTab] = useState(content.tabs[0].id);
-    const activeData = content.tabs.find((t) => t.id === activeTab);
+// ─── HowDoYouDnB ─────────────────────────────────────────────────────────────
+// Props:
+//   section — Strapi shared.tab-section from getTabSection() in page.js
+//             Falls back to FALLBACK if Strapi has no tab section yet
+export default function HowDoYouDnB({ section = null }) {
+    const { heading, subheading, tabs } = normalizeTabSection(section);
+    const [activeTab, setActiveTab] = useState(tabs[0].id);
 
     return (
         <section
             className="py-16 lg:pt-14"
-            // FIX: was solid #ff6f00 — correct value is linear-gradient top→bottom #ff6f00 → #FFBA00
             style={{ background: "linear-gradient(to bottom, #ff6f00, #FFBA00)" }}
         >
             <div className="container mx-auto px-4 xl:px-8">
 
                 {/* Section Header */}
                 <div className="text-center mb-8">
-                    {/* FIX: typo #15179a → #15189a */}
                     <h1 className="text-3xl md:text-4xl font-extrabold text-[#15189a] tracking-tight uppercase font-din">
-                        {content.heading}
+                        {heading}
                     </h1>
                     <h2 className="mt-2 text-base md:text-lg font-medium text-[#15189a]">
-                        {content.subheading}
+                        {subheading}
                     </h2>
                 </div>
 
@@ -154,7 +185,7 @@ export default function HowDoYouDnB() {
                         className="flex flex-wrap justify-center border-b border-[#15189a]/20 gap-x-1 gap-y-2"
                         role="tablist"
                     >
-                        {content.tabs.map((tab) => {
+                        {tabs.map((tab) => {
                             const isActive = tab.id === activeTab;
                             return (
                                 <li key={tab.id} role="presentation">
@@ -178,7 +209,7 @@ export default function HowDoYouDnB() {
                 </div>
 
                 {/* Tab Content */}
-                {content.tabs.map((tab) => (
+                {tabs.map((tab) => (
                     <div
                         key={tab.id}
                         id={`panel-${tab.id}`}
