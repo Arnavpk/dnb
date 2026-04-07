@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { X, Compass } from "lucide-react";
 import Link from "next/link";
 
@@ -41,6 +42,7 @@ const content = {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function CitySelectModal({ isOpen, onClose, onSelectCity }) {
+    const router = useRouter();
     // Close on Escape
     useEffect(() => {
         if (!isOpen) return;
@@ -60,6 +62,18 @@ export default function CitySelectModal({ isOpen, onClose, onSelectCity }) {
     const handleSelect = (city) => {
         onSelectCity?.(city.label);
         onClose();
+
+        if (!city.comingSoon) {
+            // Get current path e.g. "/bangalore/eat-n-drink"
+            // Replace the first segment with the new city slug
+            const currentPath = window.location.pathname; // "/bangalore/eat-n-drink"
+            const segments = currentPath.split("/").filter(Boolean); // ["bangalore", "eat-n-drink"]
+
+            // Replace city segment (index 0) with new slug
+            segments[0] = city.slug;
+
+            router.push(`/${segments.join("/")}`); // "/mumbai/eat-n-drink"
+        }
     };
 
     const handleUseLocation = () => {
