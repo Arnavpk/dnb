@@ -2,19 +2,32 @@ import HistoryInnerHero from "@/components/about/history/Historyinnerhero";
 import HistoryIntro from "@/components/about/history/Historyintro";
 import HistoryTimeline from "@/components/about/history/Historytimeline";
 import TestimonialWithImages from "@/components/about/history/Testimonialwithimages";
+import {
+    getPage,
+    getHeroSection,
+    getRichTextSection,
+    getTextImageSections,
+    getQuoteSection,
+    getArcadeImagesSection,
+} from "@/lib/strapi";
 
-// app/[location]/page.js
-export default async function HomePage({ params }) {
-    // params.location will be "bangalore", "mumbai", etc. based on the URL
+export default async function HistoryPage({ params }) {
     const { location } = await params;
+    const page = await getPage(location, "history");
+    const sections = page?.sections ?? [];
+
+    const heroSection = getHeroSection(sections);
+    const richTextSection = getRichTextSection(sections);
+    const textImageSections = getTextImageSections(sections);
+    const quoteSection = getQuoteSection(sections);
+    const arcadeImagesSection = getArcadeImagesSection(sections);
 
     return (
         <>
-            {/* Now the slider knows which city the user is looking at */}
-            <HistoryInnerHero />
-            <HistoryIntro />
-            <HistoryTimeline />
-            <TestimonialWithImages />
+            <HistoryInnerHero section={heroSection} />
+            <HistoryIntro section={richTextSection} />
+            <HistoryTimeline sections={textImageSections} />
+            <TestimonialWithImages quoteSection={quoteSection} imagesSection={arcadeImagesSection} />
         </>
     );
 }

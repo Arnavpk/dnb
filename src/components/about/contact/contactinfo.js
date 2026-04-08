@@ -2,83 +2,61 @@
 
 import Link from "next/link";
 
-// ─── CMS-ready content object ────────────────────────────────────────────────
-const content = {
-    guestRelations: {
-        heading: "GUEST RELATIONS",
-        phones: [
-            { label: "For Group Booking", display: "+91 90280 43567", href: "tel:9028043567" },
-            { label: "For General Enquiry", display: "+91 80 6908 8400", href: "tel:8069088400" },
-        ],
-        hours: {
-            label: "BUSINESS HOURS :",
-            value: "Monday-Sunday 12pm-12am IST",
-        },
-    },
-    address: {
-        heading: "ADDRESS :",
-        lines: [
-            { text: "Dave & Buster's Bangalore", sup: null },
-            { text: "1", sup: "st", suffix: " Floor, Mantri Avenue" },
-            { text: "KHB Games Village, Koramangala, Bangalore, Karnataka 560047", sup: null },
-        ],
-    },
+const FALLBACK = {
+    phoneGroup: "+91 90280 43567",
+    phoneGeneral: "+91 80 6908 8400",
+    hours: "Monday-Sunday 12pm-12am IST",
+    address: "Dave & Buster's Bangalore, 1st Floor, Mantri Avenue, KHB Games Village, Koramangala, Bangalore, Karnataka 560047",
 };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-export default function ContactInfo() {
+// Props:
+//   location — location object from Strapi
+//              phone_group    → group booking number
+//              phone_general  → general enquiry number
+//              business_hours → hours string
+//              address        → full address string
+export default function ContactInfo({ location }) {
+    const phoneGroup = location?.phone_group || FALLBACK.phoneGroup;
+    const phoneGeneral = location?.phone_general || FALLBACK.phoneGeneral;
+    const hours = location?.business_hours || FALLBACK.hours;
+    const address = location?.address || FALLBACK.address;
+
     return (
-        // bg-primary-color: #15189a
         <section className="bg-[#15189a] text-white py-12 md:py-16">
             <div className="container mx-auto px-4 xl:px-8">
-                {/* Two columns — col-md-5 + offset-md-2 → gap between them */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16">
 
-                    {/* ── Guest Relations ─────────────────────────────────────────── */}
+                    {/* Guest Relations */}
                     <div>
-                        {/* fs-20: text-[20px] */}
-                        <p className="text-[20px] font-semibold mb-1 text-white">
-                            {content.guestRelations.heading}
-                        </p>
-
+                        <p className="text-[20px] font-semibold mb-1 text-white">GUEST RELATIONS</p>
                         <div className="mt-4 space-y-2">
-                            {content.guestRelations.phones.map((phone) => (
-                                <p key={phone.href} className="text-sm md:text-base text-white/85">
-                                    {phone.label} —{" "}
-                                    <Link
-                                        href={phone.href}
-                                        className="text-[#ff6f00] font-semibold hover:underline underline-offset-2 transition-colors"
-                                    >
-                                        {phone.display}
-                                    </Link>
-                                </p>
-                            ))}
-
-                            <p className="text-sm md:text-base font-semibold text-white pt-1">
-                                {content.guestRelations.hours.label}
+                            <p className="text-sm md:text-base text-white/85">
+                                For Group Booking —{" "}
+                                <Link href={`tel:${phoneGroup.replace(/\D/g, "")}`}
+                                    className="text-[#ff6f00] font-semibold hover:underline underline-offset-2">
+                                    {phoneGroup}
+                                </Link>
                             </p>
                             <p className="text-sm md:text-base text-white/85">
-                                {content.guestRelations.hours.value}
+                                For General Enquiry —{" "}
+                                <Link href={`tel:${phoneGeneral.replace(/\D/g, "")}`}
+                                    className="text-[#ff6f00] font-semibold hover:underline underline-offset-2">
+                                    {phoneGeneral}
+                                </Link>
                             </p>
+                            <p className="text-sm md:text-base font-semibold text-white pt-1">
+                                BUSINESS HOURS :
+                            </p>
+                            <p className="text-sm md:text-base text-white/85">{hours}</p>
                         </div>
                     </div>
 
-                    {/* ── Address ─────────────────────────────────────────────────── */}
+                    {/* Address */}
                     <div>
-                        <p className="text-[20px] font-semibold mb-1 text-white">
-                            {content.address.heading}
-                        </p>
-
+                        <p className="text-[20px] font-semibold mb-1 text-white">ADDRESS :</p>
                         <div className="mt-4">
                             <address className="not-italic text-sm md:text-base text-white/85 leading-relaxed">
-                                {content.address.lines.map((line, i) => (
-                                    <span key={i}>
-                                        {line.text}
-                                        {line.sup && <sup className="text-xs">{line.sup}</sup>}
-                                        {line.suffix && line.suffix}
-                                        <br />
-                                    </span>
-                                ))}
+                                {address}
                             </address>
                         </div>
                     </div>

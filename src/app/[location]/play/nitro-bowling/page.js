@@ -1,20 +1,32 @@
-import BowlingGallery from "@/components/play/nitro-bowling/Bowlinggallery";
 import BowlingInnerHero from "@/components/play/nitro-bowling/Bowlinginnerhero";
-import BowlingPartiesCallout from "@/components/play/nitro-bowling/Bowlingpartiescallout";
 import BowlingPromo from "@/components/play/nitro-bowling/Bowlingpromo";
+import BowlingGallery from "@/components/play/nitro-bowling/Bowlinggallery";
+import BowlingPartiesCallout from "@/components/play/nitro-bowling/Bowlingpartiescallout";
+import {
+    getPage,
+    getHeroSection,
+    getTextImageSections,
+    getArcadeImagesSection,
+    getBannerSection,
+} from "@/lib/strapi";
 
-// app/[location]/page.js
-export default async function HomePage({ params }) {
-    // params.location will be "bangalore", "mumbai", etc. based on the URL
+export default async function NitroBowlingPage({ params }) {
     const { location } = await params;
+
+    const page = await getPage(location, "nitro-bowling");
+    const sections = page?.sections ?? [];
+
+    const heroSection = getHeroSection(sections);
+    const textImageSections = getTextImageSections(sections);
+    const arcadeImagesSection = getArcadeImagesSection(sections);
+    const bannerSection = getBannerSection(sections);
 
     return (
         <>
-            {/* Now the slider knows which city the user is looking at */}
-            <BowlingInnerHero />
-            <BowlingPromo />
-            <BowlingGallery />
-            <BowlingPartiesCallout />
+            <BowlingInnerHero section={heroSection} />
+            <BowlingPromo section={textImageSections[0]} />
+            <BowlingGallery section={arcadeImagesSection} />
+            <BowlingPartiesCallout section={bannerSection} />
         </>
     );
 }

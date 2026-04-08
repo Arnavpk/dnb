@@ -1,18 +1,28 @@
 import BirthdayInnerHero from "@/components/parties-n-events/birthday-parties/Birthdayinnerhero";
-import BirthdayIntro from "@/components/parties-n-events/birthday-parties/Birthdayintro";
 import BirthdayPromo from "@/components/parties-n-events/birthday-parties/Birthdaypromo";
+import BirthdayIntro from "@/components/parties-n-events/birthday-parties/Birthdayintro";
+import {
+    getPage,
+    getHeroWithCtaSection,
+    getTextImageSections,
+    getQuoteSection,
+} from "@/lib/strapi";
 
-// app/[location]/page.js
-export default async function HomePage({ params }) {
-    // params.location will be "bangalore", "mumbai", etc. based on the URL
+export default async function BirthdayPartyPage({ params }) {
     const { location } = await params;
+
+    const page = await getPage(location, "birthday-party");
+    const sections = page?.sections ?? [];
+
+    const heroWithCtaSection = getHeroWithCtaSection(sections);
+    const textImageSections = getTextImageSections(sections);
+    const quoteSection = getQuoteSection(sections);
 
     return (
         <>
-            {/* Now the slider knows which city the user is looking at */}
-            <BirthdayInnerHero />
-            <BirthdayPromo />
-            <BirthdayIntro />
+            <BirthdayInnerHero section={heroWithCtaSection} />
+            <BirthdayPromo section={textImageSections[0]} />
+            <BirthdayIntro section={quoteSection} />
         </>
     );
 }

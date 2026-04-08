@@ -130,6 +130,8 @@ const SECTIONS_POPULATE = [
     "populate[26]=sections.image.formats.thumbnail",
     "populate[27]=sections.image.formats.medium",
     "populate[28]=sections.image.formats.large",
+    "populate[29]=sections.backgroundimage",
+    "populate[30]=sections.faqs",
 ].join("&");
 
 export async function getPage(locationSlug, pageSlug) {
@@ -150,6 +152,10 @@ export async function getPagesByLocation(locationSlug) {
 // → shared.carousel → HeroSlider
 export function getCarouselSection(sections = []) {
     return sections.find((s) => s.__component === "shared.carousel") ?? null;
+}
+
+export function getHeroWithCtaSection(sections = []) {
+    return sections.find((s) => s.__component === "shared.hero-with-cta") ?? null;
 }
 
 // → shared.tab-section → HowDoYouDnB
@@ -230,6 +236,10 @@ export function getRichTextSection(sections = []) {
 // → shared.quote
 export function getQuoteSection(sections = []) {
     return sections.find((s) => s.__component === "shared.quote") ?? null;
+}
+
+export function getFaqSection(sections = []) {
+    return sections.find((s) => s.__component === "shared.faq-section") ?? null;
 }
 
 // ─── ARTICLES ─────────────────────────────────────────────────────────────────
