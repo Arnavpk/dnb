@@ -1,20 +1,35 @@
+import BirthdayOfferBanner from "@/components/offers/birthday-offers/Birthdayofferbanner";
 import BirthdayBowlingOffer from "@/components/offers/birthday-offers/Birthdaybowlingoffer";
 import BirthdayCelebrate from "@/components/offers/birthday-offers/Birthdaycelebrate";
-import BirthdayOfferBanner from "@/components/offers/birthday-offers/Birthdayofferbanner";
-import TermsAndConditions from "@/components/offers/birthday-offers/Termsandconditions";
+import TermsConditions from "@/components/offers/birthday-offers/Termsandconditions";
+import {
+    getPage,
+    getSliderSection,
+    getStepSection,
+    getTextImageSections,
+    getRichTextSection,
+} from "@/lib/strapi";
 
-// app/[location]/page.js
-export default async function HomePage({ params }) {
-    // params.location will be "bangalore", "mumbai", etc. based on the URL
+export default async function BirthdayOfferPage({ params }) {
     const { location } = await params;
+
+    const page = await getPage(location, "birthday-offer");
+    const sections = page?.sections ?? [];
+
+    const sliderSection = getSliderSection(sections);
+    const stepSections = sections.filter((s) => s.__component === "shared.step-section");
+    const textImageSections = getTextImageSections(sections);
+    const richTextSection = getRichTextSection(sections);
 
     return (
         <>
-            {/* Now the slider knows which city the user is looking at */}
-            <BirthdayOfferBanner />
-            <BirthdayBowlingOffer />
-            <BirthdayCelebrate />
-            <TermsAndConditions />
+            <BirthdayOfferBanner section={sliderSection} />
+            <BirthdayBowlingOffer section={stepSections[0]} />
+            <BirthdayCelebrate
+                section={textImageSections[0]}
+                stepSection={stepSections[1]}
+            />
+            <TermsConditions section={richTextSection} />
         </>
     );
 }

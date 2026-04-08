@@ -2,100 +2,73 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
+import { getStrapiMedia } from "@/lib/strapi";
 
-// ─── CMS-ready content object ────────────────────────────────────────────────
-const content = {
-    slide: {
-        desktopImage:
-            "https://daveandbustersindia.com/wp-content/uploads/2025/09/Birthday-banner_Desk.jpg",
-        mobileImage:
-            "https://daveandbustersindia.com/wp-content/uploads/2025/09/Birthday-banner_Mob.jpg",
-        alt: "Birthday Offer at Dave & Buster's",
-    },
-    // Modal content — populate from Strapi
-    modal: {
-        title: "Birthday Offer",
-        body: null, // Set string or JSX to populate modal body
-    },
+const FALLBACK = {
+    desktopSrc: "https://daveandbustersindia.com/wp-content/uploads/2025/09/Birthday-banner_Desk.jpg",
+    mobileSrc: "https://daveandbustersindia.com/wp-content/uploads/2025/09/Birthday-banner_Mob.jpg",
+    alt: "Birthday Offer at Dave & Buster's",
+    modalTitle: "Birthday Offer",
 };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-export default function BirthdayOfferBanner() {
+// Props:
+//   section — shared.slider from getSliderSection(sections)
+//             files[0] → desktop image
+//             files[1] → mobile image
+export default function BirthdayOfferBanner({ section }) {
     const [modalOpen, setModalOpen] = useState(false);
-    const { slide, modal } = content;
+
+    const files = section?.files ?? [];
+    const desktopSrc = files[0] ? getStrapiMedia(files[0]) : FALLBACK.desktopSrc;
+    const mobileSrc = files[1] ? getStrapiMedia(files[1]) : FALLBACK.mobileSrc;
+    const modalTitle = FALLBACK.modalTitle;
 
     return (
         <>
-            {/* ── Banner ────────────────────────────────────────────────────── */}
+            {/* Banner */}
             <div className="relative w-full overflow-hidden cursor-pointer group">
                 <button
                     onClick={() => setModalOpen(true)}
                     className="block w-full text-left focus:outline-none"
                     aria-haspopup="dialog"
-                    aria-label={`Open ${modal.title}`}
+                    aria-label={`Open ${modalTitle}`}
                 >
-                    {/* Responsive image — mobile ≤767px, desktop above */}
                     <picture>
-                        <source media="(max-width: 767px)" srcSet={slide.mobileImage} />
+                        <source media="(max-width: 767px)" srcSet={mobileSrc} />
                         <img
-                            src={slide.desktopImage}
-                            alt={slide.alt}
+                            src={desktopSrc}
+                            alt={FALLBACK.alt}
                             className="w-full h-auto object-cover block transition-transform duration-500 group-hover:scale-[1.01]"
                             loading="lazy"
                             draggable={false}
                         />
                     </picture>
-
-                    {/* Gradient overlay — bg-gradient-sherpa-blue-black */}
-                    <div
-                        className="absolute inset-0 pointer-events-none"
-                    // style={{
-                    //     background:
-                    //         "linear-gradient(to right, rgba(13,27,64,0.5) 0%, rgba(0,0,0,0.08) 60%, transparent 100%)",
-                    // }}
-                    />
+                    <div className="absolute inset-0 pointer-events-none" />
                 </button>
             </div>
 
-            {/* ── Modal ─────────────────────────────────────────────────────── */}
+            {/* Modal */}
             {modalOpen && (
                 <div
                     className="fixed inset-0 z-[300] flex items-center justify-center p-4"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label={modal.title}
+                    role="dialog" aria-modal="true" aria-label={modalTitle}
                 >
-                    {/* Backdrop */}
-                    <div
-                        className="absolute inset-0 bg-black/70"
-                        onClick={() => setModalOpen(false)}
-                    />
-
-                    {/* Modal panel */}
+                    <div className="absolute inset-0 bg-black/70" onClick={() => setModalOpen(false)} />
                     <div className="relative z-10 w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden">
-                        {/* Close button */}
                         <button
                             onClick={() => setModalOpen(false)}
-                            className="absolute top-4 right-4 flex items-center justify-center w-8 h-8 rounded-full bg-black/10 hover:bg-black/20 transition-colors z-10"
+                            className="absolute top-4 right-4 flex items-center justify-center w-8 h-8 rounded-full bg-black/10 hover:bg-black/20 transition-colors"
                             aria-label="Close modal"
                         >
                             <X size={16} strokeWidth={2.5} />
                         </button>
-
-                        {/* Modal content */}
                         <div className="p-8">
-                            <h3 className="text-xl font-extrabold text-[#15189a] uppercase font-din mb-4">
-                                {modal.title}
+                            <h3 className="text-xl font-extrabold text-[#15189a] uppercase mb-4">
+                                {modalTitle}
                             </h3>
-                            {modal.body ? (
-                                <div className="text-[#232323] text-sm leading-relaxed">
-                                    {modal.body}
-                                </div>
-                            ) : (
-                                <p className="text-[#717580] text-sm">
-                                    Content coming soon. Check back for the latest birthday offers!
-                                </p>
-                            )}
+                            <p className="text-gray-500 text-sm">
+                                Content coming soon. Check back for the latest birthday offers!
+                            </p>
                         </div>
                     </div>
                 </div>

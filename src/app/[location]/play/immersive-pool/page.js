@@ -1,22 +1,36 @@
+import PoolInnerHero from "@/components/play/immersive-pool/Poolinnerhero";
+import PoolPromo from "@/components/play/immersive-pool/Poolpromo";
 import PoolCoreGames from "@/components/play/immersive-pool/Poolcoregames";
 import PoolGallery from "@/components/play/immersive-pool/Poolgallery";
-import PoolInnerHero from "@/components/play/immersive-pool/Poolinnerhero";
 import PoolPartiesCallout from "@/components/play/immersive-pool/Poolpartiescallout";
-import PoolPromo from "@/components/play/immersive-pool/Poolpromo";
+import {
+    getPage,
+    getHeroSection,
+    getTextImageSections,
+    getArcadeGamesSection,
+    getArcadeImagesSection,
+    getBannerSection,
+} from "@/lib/strapi";
 
-// app/[location]/page.js
-export default async function HomePage({ params }) {
-    // params.location will be "bangalore", "mumbai", etc. based on the URL
+export default async function ImmersivePoolPage({ params }) {
     const { location } = await params;
+
+    const page = await getPage(location, "immersive-pool");
+    const sections = page?.sections ?? [];
+
+    const heroSection = getHeroSection(sections);
+    const textImageSections = getTextImageSections(sections);
+    const arcadeGamesSection = getArcadeGamesSection(sections);
+    const arcadeImagesSection = getArcadeImagesSection(sections);
+    const bannerSection = getBannerSection(sections);
 
     return (
         <>
-            {/* Now the slider knows which city the user is looking at */}
-            <PoolInnerHero />
-            <PoolPromo />
-            <PoolCoreGames />
-            <PoolGallery />
-            <PoolPartiesCallout />
+            <PoolInnerHero section={heroSection} />
+            <PoolPromo section={textImageSections[0]} />
+            <PoolCoreGames section={arcadeGamesSection} />
+            <PoolGallery section={arcadeImagesSection} />
+            <PoolPartiesCallout section={bannerSection} />
         </>
     );
 }

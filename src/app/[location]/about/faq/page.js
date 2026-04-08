@@ -1,18 +1,23 @@
 import FAQPageHeader from "@/components/about/faq/Faqpageheader";
 import FAQAccordion from "@/components/about/faq/Faqaccordion";
+import {
+    getPage,
+    getHeroSection,
+    getFaqSection,
+} from "@/lib/strapi";
 
-
-// app/[location]/page.js
-export default async function HomePage({ params }) {
-    // params.location will be "bangalore", "mumbai", etc. based on the URL
+export default async function FAQPage({ params }) {
     const { location } = await params;
+    const page = await getPage(location, "faq");
+    const sections = page?.sections ?? [];
+
+    const heroSection = getHeroSection(sections);
+    const faqSection = getFaqSection(sections);
 
     return (
         <>
-            {/* Now the slider knows which city the user is looking at */}
-            <FAQPageHeader />
-            <FAQAccordion />
-
+            <FAQPageHeader section={heroSection} />
+            <FAQAccordion section={faqSection} />
         </>
     );
 }

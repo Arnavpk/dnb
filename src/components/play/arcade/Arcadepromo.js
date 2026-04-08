@@ -2,67 +2,66 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { getStrapiMedia, blocksToText } from "@/lib/strapi";
 
-// ─── CMS-ready content object ────────────────────────────────────────────────
-const content = {
-    imageLeft: false,
+const FALLBACK = {
     headline: "REACH A NEW HIGH SCORE IN FUN",
-    body: "D&B doesn't play when it comes to arcade games in Bangalore. Level up your fun with games that span every era, from retro to right now. With 75+ arcade games, there's no shortage of ways to play at the best arcade in Bangalore. Take on classic favorites, try out the latest hits, or battle it out with friends. Whether you go solo or team up, the fun never stops. It's always game time!",
-    image: {
-        src: "https://daveandbustersindia.com/wp-content/uploads/2025/04/REACH-A-NEW-HIGH-SCORE-IN-FUN.jpg",
-        alt: "Smiling man and woman enjoying food and drinks at Dave & Buster's, with 'GET READY TO ROCK & ROLL!' sign.",
-    },
-    ctas: [
-        { label: "Book Now", href: "/book/power-card/" },
-    ],
+    body: "D&B doesn't play when it comes to arcade games in Bangalore. Level up your fun with games that span every era, from retro to right now. With 75+ arcade games, there's no shortage of ways to play at the best arcade in Bangalore.",
+    imageSrc: "https://daveandbustersindia.com/wp-content/uploads/2025/04/REACH-A-NEW-HIGH-SCORE-IN-FUN.jpg",
+    imageAlt: "Smiling man and woman enjoying food and drinks at Dave & Buster's",
+    ctaLabel: "Book Now",
+    ctaHref: "/book/power-card/",
+    imageLeft: false,
 };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-export default function ArcadePromo() {
+// Props:
+//   section — shared.text-image-section from getTextImageSections(sections)[0]
+export default function ArcadePromo({ section }) {
+    const headline = section?.title || FALLBACK.headline;
+    const body = section?.description ? blocksToText(section.description) : FALLBACK.body;
+    const imageSrc = section?.image ? getStrapiMedia(section.image) ?? FALLBACK.imageSrc : FALLBACK.imageSrc;
+    const imageAlt = section?.title || FALLBACK.imageAlt;
+    const ctaLabel = section?.cta_text || FALLBACK.ctaLabel;
+    const ctaHref = section?.cta_link || FALLBACK.ctaHref;
+    const imageLeft = section?.image_position === "left";
+
     return (
-        <section
-            className="py-16 md:py-20"
-        // style={{
-        //     background:
-        //         "linear-gradient(135deg, #0d1b40 0%, #1a2f6e 60%, #0d1b40 100%)",
-        // }}
-        >
+        <section className="py-16 md:py-20">
             <div className="container mx-auto px-4 xl:px-8">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-                    {/* Image — left on desktop, top on mobile */}
-                    <div className={`order-1 ${content.imageLeft ? "lg:order-1" : "lg:order-2"}`}>
+                    {/* Image */}
+                    <div className={`order-1 ${imageLeft ? "lg:order-1" : "lg:order-2"}`}>
                         <div className="relative overflow-hidden rounded-3xl shadow-2xl">
-                            <img
-                                src={content.image.src}
-                                alt={content.image.alt}
-                                className="w-full h-auto object-cover transition-transform duration-500 hover:scale-105"
-                                loading="lazy"
-                                draggable={false}
-                            />
+                            {imageSrc ? (
+                                <img
+                                    src={imageSrc} alt={imageAlt}
+                                    className="w-full h-auto object-cover transition-transform duration-500 hover:scale-105"
+                                    loading="lazy" draggable={false}
+                                />
+                            ) : (
+                                <div className="w-full aspect-[4/3] bg-gray-200 rounded-3xl" />
+                            )}
                         </div>
                     </div>
 
                     {/* Text */}
-                    <div className={`order-2 ${content.imageLeft ? "lg:order-2" : "lg:order-1"}`}>
+                    <div className={`order-2 ${imageLeft ? "lg:order-2" : "lg:order-1"}`}>
                         <h3 className="text-2xl md:text-3xl font-extrabold text-[#15189a] uppercase leading-tight">
-                            {content.headline}
+                            {headline}
                         </h3>
                         <p className="mt-4 text-black text-sm md:text-base leading-relaxed">
-                            {content.body}
+                            {body}
                         </p>
-                        {content.ctas.length > 0 && (
+                        {ctaLabel && (
                             <div className="flex flex-wrap gap-3 mt-6">
-                                {content.ctas.map((cta) => (
-                                    <Link
-                                        key={cta.label}
-                                        href={cta.href}
-                                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-sm font-bold uppercase tracking-wide transition-colors"
-                                        style={{ background: "linear-gradient(180deg, #040651, #15189a)" }}
-                                    >
-                                        {cta.label}
-                                        <ArrowRight size={14} strokeWidth={2.5} />
-                                    </Link>
-                                ))}
+                                <Link
+                                    href={ctaHref}
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-sm font-bold uppercase tracking-wide transition-colors"
+                                    style={{ background: "linear-gradient(180deg, #040651, #15189a)" }}
+                                >
+                                    {ctaLabel}
+                                    <ArrowRight size={14} strokeWidth={2.5} />
+                                </Link>
                             </div>
                         )}
                     </div>

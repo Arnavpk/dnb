@@ -1,23 +1,31 @@
 "use client";
 
-// ─── CMS-ready content object ────────────────────────────────────────────────
-const content = {
-    video: {
-        youtubeId: "nWzWHsyQmwM",
-        title: "D&B Bangalore",
-        startAt: 1,
-    },
-    // Fallback poster shown before iframe loads (optional — set to null to skip)
-    poster: null,
+// Props:
+//   section — shared.hero-video from getHeroVideoSection(sections)
+//             cta_link → YouTube video ID or full YouTube URL
+//             title    → iframe title (accessibility)
+const FALLBACK = {
+    youtubeId: "nWzWHsyQmwM",
+    title: "D&B Bangalore",
 };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-export default function VideoHero() {
-    const { youtubeId, title, startAt } = content.video;
+function extractYoutubeId(url) {
+    if (!url) return null;
+    // If it's already just an ID (no slashes or dots)
+    if (!url.includes("/") && !url.includes(".")) return url;
+    // Extract from full URL
+    const match = url.match(/(?:youtube\.com\/.*[?&]v=|youtu\.be\/)([^&\n?#]+)/);
+    return match ? match[1] : url;
+}
+
+export default function VideoHero({ section }) {
+    const rawLink = section?.cta_link || null;
+    const youtubeId = rawLink ? extractYoutubeId(rawLink) : FALLBACK.youtubeId;
+    const title = section?.title || FALLBACK.title;
 
     const embedSrc = [
         `https://www.youtube.com/embed/${youtubeId}`,
-        `?start=${startAt}`,
+        `?start=1`,
         `&autoplay=1`,
         `&mute=1`,
         `&loop=1`,
@@ -31,13 +39,6 @@ export default function VideoHero() {
 
     return (
         <section className="relative overflow-hidden h-[550px] md:h-[550px] p-0">
-            {/* ── Dark overlay ────────────────────────────────────────────────── */}
-            {/* <div className="absolute inset-0 bg-black/60 z-10 pointer-events-none" /> */}
-
-            {/* ── YouTube background iframe ────────────────────────────────────
-           The iframe is scaled up and centered to eliminate letterboxing.
-           Aspect ratio of 16:9 — we ensure it always covers the container
-           by making it wider than the viewport and centering it.          */}
             <div className="absolute inset-0 z-0 overflow-hidden">
                 <iframe
                     src={embedSrc}
