@@ -1,16 +1,29 @@
 import PartiesInnerHero from "@/components/bookings/Partiesinnerhero";
 import CorporateEventForm from "@/components/bookings/Corporateeventform";
+import {
+    getPage,
+    getQuoteSection,
+    getLocationBySlug,
+} from "@/lib/strapi";
 
+export default async function BookingsPage({ params }) {
+    const { location: locationSlug } = await params;
 
-export default async function HomePage({ params }) {
-    // params.location will be "bangalore", "mumbai", etc. based on the URL
-    const { location } = await params;
+    const [page, locationData] = await Promise.all([
+        getPage(locationSlug, "bookings"),
+        getLocationBySlug(locationSlug),
+    ]);
+
+    const sections = page?.sections ?? [];
+    const quoteSection = getQuoteSection(sections);
 
     return (
         <>
-            {/* Now the slider knows which city the user is looking at */}
-            <PartiesInnerHero />
-            <CorporateEventForm />
+            <PartiesInnerHero
+                section={quoteSection}
+                location={locationData}
+            />
+            <CorporateEventForm locationSlug={locationSlug} />
         </>
     );
 }

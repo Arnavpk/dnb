@@ -1,91 +1,89 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams, usePathname } from "next/navigation";
 import {
-    MapPin,
-    Calendar,
-    Search,
-    ChevronDown,
-    X,
-    Menu,
+    MapPin, Calendar, Search,
+    ChevronDown, X, Menu,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-// import ReserveTableModal from "@/components/ReserveTableModal";
 import CitySelectModal from "@/components/Cityselectmodal";
 
-// ─── CMS-ready content object ────────────────────────────────────────────────
-const content = {
-    logo: {
-        src: "https://daveandbustersindia.com/wp-content/uploads/2024/09/dnb-logo-tilted-white.svg",
-        alt: "Dave & Buster Logo",
-        href: "/bangalore/",
-    },
-    bookNow: {
-        label: "Book Now",
-        items: [
-            { label: "🍽️ Reserve a Table", href: "#", modal: "bookatableform" },
-            { label: "🎮 Book Games", href: "/book/bookings/gamebooking" },
-            { label: "💳 Buy Power Card", href: "/book/bookings/powercard/buy" },
-            { label: "💳 Recharge Power Card", href: "/book/bookings/powercard/recharge" },
-        ],
-    },
-    nav: [
-        { label: "Eat & Drink", href: "/bangalore/eat-n-drink/" },
+// ─── Static nav structure — location slug injected at render time ─────────────
+function buildNav(loc) {
+    return [
+        { label: "Eat & Drink", href: `/${loc}/eat-n-drink/` },
         {
             label: "Play",
-            href: "/bangalore/play/overview",
+            href: `/${loc}/play/overview`,
             children: [
-                { label: "Overview", href: "/bangalore/play/overview" },
-                { label: "Arcade", href: "/bangalore/play/arcade/" },
-                { label: "VR", href: "/bangalore/play/vr/" },
-                { label: "Hi-Tech Darts", href: "/bangalore/play/hi-tech-darts/" },
-                { label: "Nitro Bowling", href: "/bangalore/play/nitro-bowling/" },
-                { label: "Immersive Pool", href: "/bangalore/play/immersive-pool/" },
+                { label: "Overview", href: `/${loc}/play/overview` },
+                { label: "Arcade", href: `/${loc}/play/arcade/` },
+                { label: "VR", href: `/${loc}/play/vr/` },
+                { label: "Hi-Tech Darts", href: `/${loc}/play/hi-tech-darts/` },
+                { label: "Nitro Bowling", href: `/${loc}/play/nitro-bowling/` },
+                { label: "Immersive Pool", href: `/${loc}/play/immersive-pool/` },
             ],
         },
-        { label: "Watch", href: "/bangalore/watch/" },
+        { label: "Watch", href: `/${loc}/watch/` },
         {
             label: "Parties & Events",
-            href: "/bangalore/parties",
+            href: `/${loc}/parties`,
             children: [
-                { label: "Overview", href: "/bangalore/parties/overview/" },
-                { label: "Corporate Events", href: "/bangalore/parties/corporate-events/" },
-                { label: "Birthday Party", href: "/bangalore/parties/birthday-party/" },
-                { label: "Social Events", href: "/bangalore/parties/social-events/" },
+                { label: "Overview", href: `/${loc}/parties/overview/` },
+                { label: "Corporate Events", href: `/${loc}/parties/corporate-events/` },
+                { label: "Birthday Party", href: `/${loc}/parties/birthday-party/` },
+                { label: "Social Events", href: `/${loc}/parties/social-events/` },
             ],
         },
         {
             label: "Offers",
-            href: "/bangalore/offers",
+            href: `/${loc}/offers`,
             children: [
-                { label: "Birthday Offer", href: "/bangalore/offers/birthday-offer/" },
-                { label: "All Offers", href: "/bangalore/offers/all-offer" },
+                { label: "Birthday Offer", href: `/${loc}/offers/birthday-offer/` },
+                { label: "All Offers", href: `/${loc}/offers/all-offer` },
+                { label: "Summer Offers", href: `/${loc}/offers/summer-offer` },
             ],
         },
         {
             label: "About",
-            href: "/bangalore/about",
+            href: `/${loc}/about`,
             children: [
-                { label: "Contact Us", href: "/bangalore/about/contact" },
-                { label: "Blog", href: "/bangalore/about/blog" },
-                { label: "Delhi (Coming Soon)", href: "/bangalore/about/delhi-coming-soon" },
-                { label: "FAQ", href: "/bangalore/about/faq" },
-                { label: "History", href: "/bangalore/about/history" },
+                { label: "Contact Us", href: `/${loc}/about/contact` },
+                { label: "Blog", href: `/${loc}/about/blog` },
+                { label: "Delhi (Coming Soon)", href: `/${loc}/about/delhi-coming-soon` },
+                { label: "FAQ", href: `/${loc}/about/faq` },
+                { label: "History", href: `/${loc}/about/history` },
             ],
         },
-    ],
+    ];
+}
+
+const LOGO = {
+    src: "https://daveandbustersindia.com/wp-content/uploads/2024/09/dnb-logo-tilted-white.svg",
+    alt: "Dave & Buster Logo",
+};
+
+const BOOK_NOW_ITEMS = [
+    { label: "🍽️ Reserve a Table", href: "#", modal: "bookatableform" },
+    { label: "🎮 Book Games", href: "/book/bookings/gamebooking" },
+    { label: "💳 Buy Power Card", href: "/book/bookings/powercard/buy" },
+    { label: "💳 Recharge Power Card", href: "/book/bookings/powercard/recharge" },
+];
+
+// City slug → display label map
+const CITY_LABELS = {
+    bangalore: "Bangalore",
+    mumbai: "Mumbai",
+    delhi: "Delhi",
 };
 
 // ─── Nav Dropdown ─────────────────────────────────────────────────────────────
 function NavDropdown({ item, alignRight = false }) {
     const [open, setOpen] = useState(false);
     return (
-        <li
-            className="relative"
-            onMouseEnter={() => setOpen(true)}
-            onMouseLeave={() => setOpen(false)}
-        >
+        <li className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
             <button
                 type="button"
                 className="flex items-center gap-1 text-[#15189a] py-2"
@@ -99,11 +97,7 @@ function NavDropdown({ item, alignRight = false }) {
                 <ul className={`absolute top-full ${alignRight ? "right-0" : "left-0"} mt-0 bg-white rounded-lg shadow-xl min-w-[190px] z-50 py-2`}>
                     {item.children.map((child) => (
                         <li key={child.label}>
-                            <Link
-                                href={child.href}
-                                className="block px-4 py-2 text-sm text-[#15189a] font-medium hover:bg-gray-50 transition-colors"
-                                onClick={() => setOpen(false)}
-                            >
+                            <Link href={child.href} className="block px-4 py-2 text-sm text-[#15189a] font-medium hover:bg-gray-50 transition-colors" onClick={() => setOpen(false)}>
                                 {child.label}
                             </Link>
                         </li>
@@ -115,51 +109,29 @@ function NavDropdown({ item, alignRight = false }) {
 }
 
 // ─── Book Now Dropdown ────────────────────────────────────────────────────────
-// ADD: accepts onReserve prop to open ReserveTableModal for "Reserve a Table"
 function BookNowDropdown({ onReserve }) {
     const [open, setOpen] = useState(false);
     return (
-        <div
-            className="relative"
-            onMouseEnter={() => setOpen(true)}
-            onMouseLeave={() => setOpen(false)}
-        >
+        <div className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
             <button
                 type="button"
                 onClick={() => setOpen((o) => !o)}
                 className="flex items-center gap-2 text-[#15189a] whitespace-nowrap"
-                style={{
-                    border: "4px solid #15189a",
-                    borderRadius: "50px",
-                    padding: "6px 16px",
-                    backgroundColor: "transparent",
-                    fontFamily: '"Libre Franklin", sans-serif',
-                    fontWeight: 600,
-                    fontSize: "18px",
-                }}
+                style={{ border: "4px solid #15189a", borderRadius: "50px", padding: "6px 16px", backgroundColor: "transparent", fontFamily: '"Libre Franklin", sans-serif', fontWeight: 600, fontSize: "18px" }}
             >
-                <span>{content.bookNow.label}</span>
+                <span>Book Now</span>
                 <Calendar size={18} strokeWidth={2} />
             </button>
             {open && (
                 <ul className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-xl min-w-[220px] z-50 py-2">
-                    {content.bookNow.items.map((item) => (
+                    {BOOK_NOW_ITEMS.map((item) => (
                         <li key={item.label}>
                             {item.modal === "bookatableform" ? (
-                                // Reserve a Table → opens modal
-                                <button
-                                    type="button"
-                                    onClick={() => { onReserve(); setOpen(false); }}
-                                    className="block w-full text-left px-4 py-2 text-sm text-[#15189a] font-medium hover:bg-gray-50 transition-colors"
-                                >
+                                <button type="button" onClick={() => { onReserve(); setOpen(false); }} className="block w-full text-left px-4 py-2 text-sm text-[#15189a] font-medium hover:bg-gray-50 transition-colors">
                                     {item.label}
                                 </button>
                             ) : (
-                                <Link
-                                    href={item.href}
-                                    className="block px-4 py-2 text-sm text-[#15189a] font-medium hover:bg-gray-50 transition-colors"
-                                    onClick={() => setOpen(false)}
-                                >
+                                <Link href={item.href} className="block px-4 py-2 text-sm text-[#15189a] font-medium hover:bg-gray-50 transition-colors" onClick={() => setOpen(false)}>
                                     {item.label}
                                 </Link>
                             )}
@@ -172,8 +144,7 @@ function BookNowDropdown({ onReserve }) {
 }
 
 // ─── Mobile Menu ──────────────────────────────────────────────────────────────
-// ADD: onReserve + onCitySelect props
-function MobileMenu({ open, onClose, onReserve, onCitySelect }) {
+function MobileMenu({ open, onClose, onReserve, onCitySelect, nav, cityLabel }) {
     const [expandedItem, setExpandedItem] = useState(null);
     const [bookOpen, setBookOpen] = useState(false);
 
@@ -182,44 +153,24 @@ function MobileMenu({ open, onClose, onReserve, onCitySelect }) {
     return (
         <div className="fixed inset-0 z-[200] bg-white flex flex-col overflow-y-auto xl:hidden">
             <div className="flex justify-between items-center px-4 py-4 bg-[#ff6f00]">
-                <Image src={content.logo.src} alt={content.logo.alt} width={100} height={60} unoptimized />
-                <button type="button" onClick={onClose} className="text-white p-2">
-                    <X size={24} />
-                </button>
+                <Image src={LOGO.src} alt={LOGO.alt} width={100} height={60} unoptimized />
+                <button type="button" onClick={onClose} className="text-white p-2"><X size={24} /></button>
             </div>
 
-            {/* Book Now section */}
             <div className="px-4 py-3 border-b border-gray-200">
-                <button
-                    type="button"
-                    className="flex items-center gap-2 text-[#15189a] font-bold w-full"
-                    onClick={() => setBookOpen((o) => !o)}
-                >
+                <button type="button" className="flex items-center gap-2 text-[#15189a] font-bold w-full" onClick={() => setBookOpen((o) => !o)}>
                     <Calendar size={18} />
-                    <span>{content.bookNow.label}</span>
+                    <span>Book Now</span>
                     <ChevronDown size={16} className={`ml-auto transition-transform ${bookOpen ? "rotate-180" : ""}`} />
                 </button>
                 {bookOpen && (
                     <ul className="mt-2">
-                        {content.bookNow.items.map((item) => (
+                        {BOOK_NOW_ITEMS.map((item) => (
                             <li key={item.label}>
                                 {item.modal === "bookatableform" ? (
-                                    // Reserve a Table → closes menu + opens modal
-                                    <button
-                                        type="button"
-                                        onClick={onReserve}
-                                        className="block w-full text-left px-2 py-2 text-sm text-[#15189a] font-medium"
-                                    >
-                                        {item.label}
-                                    </button>
+                                    <button type="button" onClick={onReserve} className="block w-full text-left px-2 py-2 text-sm text-[#15189a] font-medium">{item.label}</button>
                                 ) : (
-                                    <Link
-                                        href={item.href}
-                                        className="block px-2 py-2 text-sm text-[#15189a] font-medium"
-                                        onClick={onClose}
-                                    >
-                                        {item.label}
-                                    </Link>
+                                    <Link href={item.href} className="block px-2 py-2 text-sm text-[#15189a] font-medium" onClick={onClose}>{item.label}</Link>
                                 )}
                             </li>
                         ))}
@@ -227,18 +178,13 @@ function MobileMenu({ open, onClose, onReserve, onCitySelect }) {
                 )}
             </div>
 
-            {/* Nav items */}
             <nav className="flex-1">
                 <ul>
-                    {content.nav.map((item) => (
+                    {nav.map((item) => (
                         <li key={item.label}>
                             {item.children ? (
                                 <>
-                                    <button
-                                        type="button"
-                                        className="flex items-center justify-between w-full py-3 px-4 text-[#15189a] font-bold text-base border-b border-gray-200"
-                                        onClick={() => setExpandedItem(expandedItem === item.label ? null : item.label)}
-                                    >
+                                    <button type="button" className="flex items-center justify-between w-full py-3 px-4 text-[#15189a] font-bold text-base border-b border-gray-200" onClick={() => setExpandedItem(expandedItem === item.label ? null : item.label)}>
                                         {item.label}
                                         <ChevronDown size={16} className={`transition-transform ${expandedItem === item.label ? "rotate-180" : ""}`} />
                                     </button>
@@ -246,41 +192,24 @@ function MobileMenu({ open, onClose, onReserve, onCitySelect }) {
                                         <ul className="bg-gray-50">
                                             {item.children.map((child) => (
                                                 <li key={child.label}>
-                                                    <Link
-                                                        href={child.href}
-                                                        className="block px-8 py-2 text-[#15189a] text-sm border-b border-gray-100"
-                                                        onClick={onClose}
-                                                    >
-                                                        {child.label}
-                                                    </Link>
+                                                    <Link href={child.href} className="block px-8 py-2 text-[#15189a] text-sm border-b border-gray-100" onClick={onClose}>{child.label}</Link>
                                                 </li>
                                             ))}
                                         </ul>
                                     )}
                                 </>
                             ) : (
-                                <Link
-                                    href={item.href}
-                                    className="block py-3 px-4 text-[#15189a] font-bold text-base border-b border-gray-200"
-                                    onClick={onClose}
-                                >
-                                    {item.label}
-                                </Link>
+                                <Link href={item.href} className="block py-3 px-4 text-[#15189a] font-bold text-base border-b border-gray-200" onClick={onClose}>{item.label}</Link>
                             )}
                         </li>
                     ))}
                 </ul>
             </nav>
 
-            {/* Mobile location bar — ADD: onClick opens CitySelectModal */}
             <div style={{ background: "#15189a" }} className="w-full">
-                <button
-                    type="button"
-                    onClick={onCitySelect}
-                    className="flex items-center justify-center gap-2 w-full py-2 text-white font-semibold text-sm"
-                >
+                <button type="button" onClick={onCitySelect} className="flex items-center justify-center gap-2 w-full py-2 text-white font-semibold text-sm">
                     <MapPin size={16} />
-                    <span>{content.location?.label ?? "Bangalore"}</span>
+                    <span>{cityLabel}</span>
                     <ChevronDown size={14} className="ml-1" />
                 </button>
             </div>
@@ -290,106 +219,66 @@ function MobileMenu({ open, onClose, onReserve, onCitySelect }) {
 
 // ─── Main Navbar ──────────────────────────────────────────────────────────────
 export default function Navbar() {
+    const params = useParams();
+    const pathname = usePathname();
+
+    // Derive current location slug from URL — this is always correct
+    const locationSlug = params?.location ?? "bangalore";
+    const cityLabel = CITY_LABELS[locationSlug] ?? locationSlug.charAt(0).toUpperCase() + locationSlug.slice(1);
+
+    // Build nav with current location
+    const nav = buildNav(locationSlug);
+
     const [mobileOpen, setMobileOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-
-    // ADD: modal states
     const [reserveOpen, setReserveOpen] = useState(false);
     const [cityOpen, setCityOpen] = useState(false);
-    const [selectedCity, setSelectedCity] = useState("Bangalore");
+
+    // Close mobile menu on route change
+    useEffect(() => {
+        setMobileOpen(false);
+    }, [pathname]);
 
     return (
         <>
             <header className="fixed top-0 left-0 right-0 z-[100] bg-[#ff6f00] shadow-lg overflow-visible">
 
-                {/* ── DESKTOP (xl+) ─────────────────────────────────────────── */}
-                <div
-                    className="hidden xl:flex items-center justify-between w-full mx-auto"
-                    style={{
-                        height: "160px",
-                        maxWidth: "1408px",
-                        paddingLeft: "15px",
-                        paddingRight: "15px",
-                        fontFamily: '"Libre Franklin", sans-serif',
-                    }}
-                >
-                    {/* Logo */}
-                    <Link
-                        href={content.logo.href}
-                        className="flex-none flex items-center"
-                        style={{ padding: "0 15px", alignSelf: "stretch", marginTop: "-20px", marginBottom: "-20px" }}
-                    >
-                        <Image
-                            src={content.logo.src}
-                            alt={content.logo.alt}
-                            width={210}
-                            height={210}
-                            unoptimized
-                            style={{ width: "210px", height: "210px" }}
-                        />
+                {/* ── DESKTOP (xl+) ───────────────────────────────────────────── */}
+                <div className="hidden xl:flex items-center justify-between w-full mx-auto"
+                    style={{ height: "160px", maxWidth: "1408px", paddingLeft: "15px", paddingRight: "15px", fontFamily: '"Libre Franklin", sans-serif' }}>
+
+                    <Link href={`/${locationSlug}/`} className="flex-none flex items-center"
+                        style={{ padding: "0 15px", alignSelf: "stretch", marginTop: "-20px", marginBottom: "-20px" }}>
+                        <Image src={LOGO.src} alt={LOGO.alt} width={210} height={210} unoptimized style={{ width: "210px", height: "210px" }} />
                     </Link>
 
-                    {/* Right col */}
-                    <div
-                        className="flex-none flex"
-                        style={{ flexDirection: "row-reverse", alignContent: "flex-end", alignSelf: "stretch", padding: "0 15px" }}
-                    >
-                        <div
-                            className="flex flex-col"
-                            style={{ paddingTop: "1rem", alignSelf: "stretch", justifyContent: "space-between", paddingBottom: "0.75rem" }}
-                        >
-                            {/* Top row */}
-                            <div className="flex items-center justify-between" style={{ gap: "16px", marginBottom: "0.75rem" }}>
+                    <div className="flex-none flex" style={{ flexDirection: "row-reverse", alignContent: "flex-end", alignSelf: "stretch", padding: "0 15px" }}>
+                        <div className="flex flex-col" style={{ paddingTop: "1rem", alignSelf: "stretch", justifyContent: "space-between", paddingBottom: "0.75rem" }}>
 
-                                {/* Location — ADD: onClick opens CitySelectModal, shows selectedCity */}
-                                <button
-                                    type="button"
-                                    onClick={() => setCityOpen(true)}
+                            <div className="flex items-center justify-between" style={{ gap: "16px", marginBottom: "0.75rem" }}>
+                                <button type="button" onClick={() => setCityOpen(true)}
                                     className="flex items-center gap-2 font-medium text-white whitespace-nowrap cursor-pointer"
-                                    style={{
-                                        background: "linear-gradient(180deg, #040651, #15189a)",
-                                        borderRadius: "50px",
-                                        padding: "6px 16px",
-                                        fontFamily: '"Libre Franklin", sans-serif',
-                                        fontSize: "18px",
-                                    }}
-                                >
-                                    <span>{selectedCity}</span>
+                                    style={{ background: "linear-gradient(180deg, #040651, #15189a)", borderRadius: "50px", padding: "6px 16px", fontFamily: '"Libre Franklin", sans-serif', fontSize: "18px" }}>
+                                    <span>{cityLabel}</span>
                                     <MapPin size={16} strokeWidth={2} />
                                 </button>
 
-                                {/* Book Now — ADD: passes onReserve */}
                                 <BookNowDropdown onReserve={() => setReserveOpen(true)} />
 
-                                {/* Search */}
                                 <div>
                                     {searchOpen ? (
-                                        <div
-                                            className="flex items-center gap-2 bg-white"
-                                            style={{ borderRadius: "50px", padding: "6px 16px" }}
-                                        >
+                                        <div className="flex items-center gap-2 bg-white" style={{ borderRadius: "50px", padding: "6px 16px" }}>
                                             <Search size={15} className="text-[#15189a]" />
-                                            <input
-                                                autoFocus
-                                                type="text"
-                                                placeholder="Search"
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                            <input autoFocus type="text" placeholder="Search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                                                 className="bg-transparent text-[#15189a] text-sm outline-none w-36"
-                                                style={{ fontFamily: '"Libre Franklin", sans-serif', fontWeight: 700 }}
-                                            />
-                                            <button type="button" onClick={() => setSearchOpen(false)}>
-                                                <X size={15} className="text-[#15189a]" />
-                                            </button>
+                                                style={{ fontFamily: '"Libre Franklin", sans-serif', fontWeight: 700 }} />
+                                            <button type="button" onClick={() => setSearchOpen(false)}><X size={15} className="text-[#15189a]" /></button>
                                         </div>
                                     ) : (
-                                        <button
-                                            type="button"
-                                            onClick={() => setSearchOpen(true)}
+                                        <button type="button" onClick={() => setSearchOpen(true)}
                                             className="flex items-center gap-2 text-[#15189a]"
-                                            style={{ fontFamily: '"Libre Franklin", sans-serif', fontWeight: 700, fontSize: "18px" }}
-                                        >
+                                            style={{ fontFamily: '"Libre Franklin", sans-serif', fontWeight: 700, fontSize: "18px" }}>
                                             <Search size={18} strokeWidth={2.5} />
                                             <span>Search</span>
                                         </button>
@@ -397,22 +286,16 @@ export default function Navbar() {
                                 </div>
                             </div>
 
-                            {/* Nav row */}
                             <nav style={{ alignSelf: "stretch" }}>
-                                <ul
-                                    className="flex items-center justify-between p-0 m-0 list-none"
-                                    style={{ columnGap: "4rem", marginLeft: 0, alignSelf: "stretch", alignItems: "center", fontFamily: '"Libre Franklin", sans-serif' }}
-                                >
-                                    {content.nav.map((item, index) =>
+                                <ul className="flex items-center justify-between p-0 m-0 list-none"
+                                    style={{ columnGap: "4rem", marginLeft: 0, alignSelf: "stretch", alignItems: "center", fontFamily: '"Libre Franklin", sans-serif' }}>
+                                    {nav.map((item, index) =>
                                         item.children ? (
-                                            <NavDropdown key={item.label} item={item} alignRight={index >= content.nav.length - 2} />
+                                            <NavDropdown key={item.label} item={item} alignRight={index >= nav.length - 2} />
                                         ) : (
                                             <li key={item.label}>
-                                                <Link
-                                                    href={item.href}
-                                                    className="block text-[#15189a] py-1"
-                                                    style={{ fontFamily: '"Libre Franklin", sans-serif', fontWeight: 700, fontSize: "20px" }}
-                                                >
+                                                <Link href={item.href} className="block text-[#15189a] py-1"
+                                                    style={{ fontFamily: '"Libre Franklin", sans-serif', fontWeight: 700, fontSize: "20px" }}>
                                                     {item.label}
                                                 </Link>
                                             </li>
@@ -424,58 +307,26 @@ export default function Navbar() {
                     </div>
                 </div>
 
-                {/* ── MOBILE (below xl) ────────────────────────────────────── */}
+                {/* ── MOBILE (below xl) ───────────────────────────────────────── */}
                 <div className="xl:hidden">
                     <div className="flex items-center justify-between px-3" style={{ minHeight: "110px" }}>
-
-                        {/* Logo */}
-                        <Link href={content.logo.href} className="shrink-0" style={{ marginBottom: "-10px" }}>
-                            <Image
-                                src={content.logo.src}
-                                alt={content.logo.alt}
-                                width={160}
-                                height={110}
-                                unoptimized
-                                style={{ width: "160px", height: "auto" }}
-                            />
+                        <Link href={`/${locationSlug}/`} className="shrink-0" style={{ marginBottom: "-10px" }}>
+                            <Image src={LOGO.src} alt={LOGO.alt} width={160} height={110} unoptimized style={{ width: "160px", height: "auto" }} />
                         </Link>
-
-                        {/* Right: Search + Book Now + Menu */}
                         <div className="flex items-center gap-3 pb-1">
-
-                            {/* Search */}
-                            <button
-                                type="button"
-                                onClick={() => setSearchOpen((o) => !o)}
-                                className="flex flex-col items-center gap-1"
-                                aria-label="Search"
-                            >
+                            <button type="button" onClick={() => setSearchOpen((o) => !o)} className="flex flex-col items-center gap-1" aria-label="Search">
                                 <span className="flex items-center justify-center bg-white rounded-full" style={{ width: "48px", height: "48px" }}>
                                     <Search size={20} className="text-[#15189a]" strokeWidth={2.5} />
                                 </span>
                                 <span className="text-white text-[11px] font-semibold">Search</span>
                             </button>
-
-                            {/* Book Now — ADD: opens ReserveTableModal on click */}
-                            <button
-                                type="button"
-                                onClick={() => setReserveOpen(true)}
-                                className="flex flex-col items-center gap-1"
-                                aria-label="Book Now"
-                            >
+                            <button type="button" onClick={() => setReserveOpen(true)} className="flex flex-col items-center gap-1" aria-label="Book Now">
                                 <span className="flex items-center justify-center bg-white rounded-full" style={{ width: "48px", height: "48px" }}>
                                     <Calendar size={20} className="text-[#15189a]" strokeWidth={2.5} />
                                 </span>
                                 <span className="text-white text-[11px] font-semibold">Book Now</span>
                             </button>
-
-                            {/* Menu */}
-                            <button
-                                type="button"
-                                onClick={() => setMobileOpen(true)}
-                                className="flex flex-col items-center gap-1"
-                                aria-label="Menu"
-                            >
+                            <button type="button" onClick={() => setMobileOpen(true)} className="flex flex-col items-center gap-1" aria-label="Menu">
                                 <span className="flex items-center justify-center rounded-full" style={{ width: "48px", height: "48px", backgroundColor: "#15189a" }}>
                                     <Menu size={22} className="text-white" strokeWidth={2.5} />
                                 </span>
@@ -484,58 +335,43 @@ export default function Navbar() {
                         </div>
                     </div>
 
-                    {/* Mobile search bar */}
                     {searchOpen && (
                         <div className="px-4 pb-3">
                             <div className="flex items-center gap-2 bg-white/20 rounded-full px-4 py-2">
                                 <Search size={16} className="text-white" />
-                                <input
-                                    autoFocus
-                                    type="text"
-                                    placeholder="Search"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="bg-transparent text-white placeholder-white/70 text-sm outline-none flex-1"
-                                />
-                                <button onClick={() => setSearchOpen(false)}>
-                                    <X size={16} className="text-white" />
-                                </button>
+                                <input autoFocus type="text" placeholder="Search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="bg-transparent text-white placeholder-white/70 text-sm outline-none flex-1" />
+                                <button onClick={() => setSearchOpen(false)}><X size={16} className="text-white" /></button>
                             </div>
                         </div>
                     )}
 
-                    {/* Mobile location bar — ADD: onClick opens CitySelectModal */}
                     <div className="w-full" style={{ background: "#15189a" }}>
-                        <button
-                            type="button"
-                            onClick={() => setCityOpen(true)}
-                            className="flex items-center justify-center gap-2 w-full py-2 text-white font-semibold text-sm"
-                        >
+                        <button type="button" onClick={() => setCityOpen(true)}
+                            className="flex items-center justify-center gap-2 w-full py-2 text-white font-semibold text-sm">
                             <MapPin size={14} />
-                            <span>{selectedCity}</span>
+                            <span>{cityLabel}</span>
                             <ChevronDown size={13} className="ml-1" />
                         </button>
                     </div>
                 </div>
             </header>
 
-            {/* Mobile full-screen menu */}
             <MobileMenu
                 open={mobileOpen}
                 onClose={() => setMobileOpen(false)}
                 onReserve={() => { setMobileOpen(false); setReserveOpen(true); }}
                 onCitySelect={() => { setMobileOpen(false); setCityOpen(true); }}
+                nav={nav}
+                cityLabel={cityLabel}
             />
 
-            {/* Modals */}
-            {/* <ReserveTableModal isOpen={reserveOpen} onClose={() => setReserveOpen(false)} /> */}
             <CitySelectModal
                 isOpen={cityOpen}
                 onClose={() => setCityOpen(false)}
-                onSelectCity={(city) => setSelectedCity(city)}
+                onSelectCity={() => { }}
             />
 
-            {/* Spacer */}
             <div className="h-[146px] xl:h-[160px]" />
         </>
     );
