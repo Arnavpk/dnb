@@ -246,10 +246,10 @@ export function getFaqSection(sections = []) {
 
 export async function getArticles(categorySlug) {
     const categoryFilter = categorySlug
-        ? `&filters[category][slug][$eq]=${categorySlug}`
+        ? `&filters[categories][slug][$eq]=${categorySlug}`
         : "";
     return fetchStrapi(
-        `/articles?${categoryFilter}&populate=cover,category,author&sort=publishedAt:desc`
+        `/articles?${categoryFilter}&populate[0]=cover&populate[1]=categories&populate[2]=author&filters[publishedAt][$notNull]=true&sort=publishedAt:desc`
     );
 }
 
