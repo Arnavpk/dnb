@@ -1,31 +1,46 @@
 "use client";
 
-const packages = [
+const FALLBACK_PACKAGES = [
     {
-        id: "2hr",
-        duration: "2 Hours",
-        price: "₹2,999",
-        chips: "3000 Chips",
-        chipsLabel: "Game Credits Loaded",
-        play: "2 Hrs Play",
-        playLabel: "Unlimited Games",
-        tickets: "300 Tickets",
-        ticketsLabel: "Redeem for Prizes",
+        id: "2hr", duration: "2 Hours", price: "₹2,999",
+        chips: "3000 Chips", chipsLabel: "Game Credits Loaded",
+        play: "2 Hrs Play", playLabel: "Unlimited Games",
+        tickets: "300 Tickets", ticketsLabel: "Redeem for Prizes",
         bestValue: false,
     },
     {
-        id: "3hr",
-        duration: "3 Hours",
-        price: "₹4,999",
-        chips: "5000 Chips",
-        chipsLabel: "Game Credits Loaded",
-        play: "3 Hrs Play",
-        playLabel: "Unlimited Games",
-        tickets: "500 Tickets",
-        ticketsLabel: "Redeem for Prizes",
+        id: "3hr", duration: "3 Hours", price: "₹4,999",
+        chips: "5000 Chips", chipsLabel: "Game Credits Loaded",
+        play: "3 Hrs Play", playLabel: "Unlimited Games",
+        tickets: "500 Tickets", ticketsLabel: "Redeem for Prizes",
         bestValue: true,
     },
 ];
+
+const FALLBACK_HEADING = "Unlimited Arcade Games";
+
+// Normalize shared.packages-section → packages shape
+// packages-section: { title, packages: offer-package[] }
+// offer-package: { duration, price, chips, chips_label, play_duration, play_label, tickets, tickets_label, best_value }
+function normalizePackages(section) {
+    if (!section?.packages?.length) return { heading: FALLBACK_HEADING, packages: FALLBACK_PACKAGES };
+
+    return {
+        heading: section.title || FALLBACK_HEADING,
+        packages: section.packages.map((pkg, i) => ({
+            id: pkg.id ?? i,
+            duration: pkg.duration ?? "",
+            price: pkg.price ?? "",
+            chips: pkg.chips ?? "",
+            chipsLabel: pkg.chips_label ?? "Game Credits Loaded",
+            play: pkg.play_duration ?? "",
+            playLabel: pkg.play_label ?? "Unlimited Games",
+            tickets: pkg.tickets ?? "",
+            ticketsLabel: pkg.tickets_label ?? "Redeem for Prizes",
+            bestValue: pkg.best_value ?? false,
+        })),
+    };
+}
 
 function PackageCard({ pkg }) {
     return (
@@ -40,13 +55,10 @@ function PackageCard({ pkg }) {
                 </div>
             )}
 
-            {/* Duration + Price */}
             <div className="border-b border-gray-200 pb-5">
-                <p className="text-[#15189a] font-bold text-xl">{pkg.duration}</p>
                 <p className="text-[#ff6f00] font-extrabold text-5xl mt-2">{pkg.price}</p>
             </div>
 
-            {/* Features */}
             <div className="flex flex-col gap-5">
                 <div className="flex items-center gap-4">
                     <span className="text-3xl">🎮</span>
@@ -74,24 +86,24 @@ function PackageCard({ pkg }) {
     );
 }
 
-export default function SummerPackages() {
+// Props:
+//   section — shared.packages-section from getPackagesSection(sections)
+export default function SummerPackages({ section }) {
+    const { heading, packages } = normalizePackages(section);
+
     return (
         <section className="py-16 md:py-20" style={{ background: "linear-gradient(135deg, #1a2f9e 0%, #0d1b64 100%)" }}>
             <div className="container mx-auto px-4 xl:px-8">
-
                 <div className="text-center mb-12">
-                    <h2 className="text-2xl md:text-3xl xl:text-4xl font-extrabold text-white uppercase tracking-tight font-din">
-                        Unlimited Arcade Games
+                    <h2 className="text-2xl md:text-3xl xl:text-4xl font-extrabold text-white uppercase tracking-tight">
+                        {heading}
                     </h2>
                 </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 max-w-3xl mx-auto">
                     {packages.map((pkg) => (
                         <PackageCard key={pkg.id} pkg={pkg} />
                     ))}
                 </div>
-
-
             </div>
         </section>
     );

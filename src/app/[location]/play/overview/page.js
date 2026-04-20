@@ -28,7 +28,7 @@ export default async function PlayOverviewPage({ params }) {
         <>
             <InnerHero section={heroSection} />
             <GamesShowcase rows={textImageSections} />
-            <HowItWorks section={stepSection} />
+            <HowItWorks section={stepSection} location={location} />
             <SectionIntro section={quoteSection} />
             <GamesCarousel section={carouselSection} />
         </>

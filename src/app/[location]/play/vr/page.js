@@ -26,7 +26,7 @@ export default async function VRPage({ params }) {
             <VRInnerHero section={heroSection} />
             <VRPromo section={textImageSections[0]} />
             <PowerCardSteps section={stepSection} />
-            <VRPartiesCallout section={bannerSection} />
+            <VRPartiesCallout section={bannerSection} location={location} />
         </>
     );
 }

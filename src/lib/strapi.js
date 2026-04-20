@@ -132,6 +132,7 @@ const SECTIONS_POPULATE = [
     "populate[28]=sections.image.formats.large",
     "populate[29]=sections.backgroundimage",
     "populate[30]=sections.faqs",
+    "populate[31]=sections.packages"
 ].join("&");
 
 export async function getPage(locationSlug, pageSlug) {
@@ -241,6 +242,11 @@ export function getQuoteSection(sections = []) {
 export function getFaqSection(sections = []) {
     return sections.find((s) => s.__component === "shared.faq-section") ?? null;
 }
+
+export function getPackagesSection(sections = []) {
+    return sections.find((s) => s.__component === "shared.packages-section") ?? null;
+}
+
 
 // ─── ARTICLES ─────────────────────────────────────────────────────────────────
 

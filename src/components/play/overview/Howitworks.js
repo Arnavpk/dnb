@@ -46,7 +46,7 @@ function normalizeSteps(strapiSection) {
 
 // Props:
 //   section — shared.step-section from getStepSection(sections)
-export default function HowItWorks({ section }) {
+export default function HowItWorks({ section, location }) {
     const { heading, steps } = normalizeSteps(section);
     const [activeStep, setActiveStep] = useState(steps[0]?.id);
 
@@ -119,7 +119,7 @@ export default function HowItWorks({ section }) {
 
                         <div className="mt-6">
                             <Link
-                                href={`/bookings`}
+                                href={`/${location}/bookings`}
                                 className="inline-flex items-center gap-2 text-[#0d1b40] font-bold text-base uppercase tracking-wide hover:underline underline-offset-4 transition-all"
                             >
                                 Learn More
