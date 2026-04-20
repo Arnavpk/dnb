@@ -1,10 +1,7 @@
 import { Libre_Franklin } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
-import Header from "@/components/Header";
-import Footer from "@/components/footer";
 
-// ─── --primary-font: "Libre Franklin" ────────────────────────────────────────
 const libreFranklin = Libre_Franklin({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
@@ -12,13 +9,11 @@ const libreFranklin = Libre_Franklin({
   display: "swap",
 });
 
-// ─── --alt-font: 'DINBuster' (self-hosted) ───────────────────────────────────
-// File location: public/fonts/DINBuster.woff2
 const dinBuster = localFont({
   src: "../../public/fonts/DINBuster.woff2",
   variable: "--font-din",
   display: "swap",
-  weight: "400 700", // covers regular and bold weights
+  weight: "400 700",
 });
 
 export const metadata = {
@@ -35,25 +30,14 @@ export const metadata = {
   },
 };
 
-async function getCity() {
-  return "Bangalore";
-}
-
-export default async function RootLayout({ children }) {
-  const city = await getCity();
-
+export default function RootLayout({ children }) {
   return (
-    <html
-      lang="en"
-      className={`${libreFranklin.variable} ${dinBuster.variable}`}
-    >
+    <html lang="en" className={`${libreFranklin.variable} ${dinBuster.variable}`}>
       <body
         className="min-h-screen bg-white antialiased"
         style={{ fontFamily: "var(--font-libre), 'Libre Franklin', sans-serif" }}
       >
-        <Header city={city} />
         <main>{children}</main>
-        <Footer />
       </body>
     </html>
   );

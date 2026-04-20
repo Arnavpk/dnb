@@ -1,65 +1,53 @@
 "use client";
 
 import {
-    Gamepad2,
-    CircleDot,
-    Crosshair,
-    Waves,
-    Glasses,
-    Twitter,
-    Instagram,
-    Facebook,
-    Youtube,
+    Gamepad2, CircleDot, Crosshair,
+    Waves, Glasses, Twitter, Instagram,
+    Facebook, Youtube,
 } from "lucide-react";
+import Link from "next/link";
 
-// ─── CMS-ready content object ────────────────────────────────────────────────
-const content = {
-    logo: {
-        src: "https://daveandbustersindia.com/wp-content/uploads/2024/10/dnb-logo-white.svg",
-        alt: "Dave & Buster's Logo",
-        href: "/",
-    },
-    address:
-        "1st Floor, Mantri Avenue, KHB Games Village, Koramangala, Bangalore, Karnataka 560047",
-    socials: [
-        { label: "X (Twitter)", href: "https://x.com/dandb_india/", icon: "twitter" },
-        { label: "Instagram", href: "https://www.instagram.com/daveandbustersindia", icon: "instagram" },
-        { label: "Facebook", href: "https://www.facebook.com/DaveAndBustersIND", icon: "facebook" },
-        { label: "YouTube", href: "https://www.youtube.com/@DaveAndBustersIndia", icon: "youtube" },
-    ],
-    quickLinks: {
-        heading: "Quick Links",
-        items: [
-            { label: "Home", href: "/" },
-            { label: "Contact Us", href: "/bangalore/contact-us/" },
-            { label: "History", href: "/history/" },
-            { label: "FAQ's", href: "/bangalore/faq/" },
-            { label: "Privacy Policy", href: "/privacy-policy/" },
-            { label: "Terms of Use", href: "/terms-of-use/" },
-        ],
-    },
-    games: {
-        heading: "Games",
-        items: [
-            { label: "Arcade", href: "/bangalore/play/arcade/", icon: "gamepad" },
-            { label: "Nitro Bowling", href: "/bangalore/play/nitro-bowling/", icon: "circle-dot" },
-            { label: "Hi-Tech Darts", href: "/bangalore/play/hi-tech-darts/", icon: "crosshair" },
-            { label: "Immersive Pool", href: "/bangalore/play/immersive-pool/", icon: "waves" },
-            { label: "VR", href: "/bangalore/play/vr/", icon: "glasses" },
-        ],
-    },
-    pageLinks: {
-        heading: "Page Links",
-        items: [
-            { label: "Eat & Drink", href: "/bangalore/eat-drink/" },
-            { label: "Watch", href: "/bangalore/watch/" },
-            { label: "Parties & Events", href: "/bangalore/parties/" },
-            { label: "Offers", href: "/bangalore/offers/" },
-            { label: "Blogs", href: "/blog/" },
-        ],
-    },
-    copyright: "© 2026 Malpani Arcade Private Limited",
+// ─── Static config ────────────────────────────────────────────────────────────
+const LOGO = {
+    src: "https://daveandbustersindia.com/wp-content/uploads/2024/10/dnb-logo-white.svg",
+    alt: "Dave & Buster's Logo",
 };
+
+const SOCIALS = [
+    { label: "X (Twitter)", href: "https://x.com/dandb_india/", icon: "twitter" },
+    { label: "Instagram", href: "https://www.instagram.com/daveandbustersindia", icon: "instagram" },
+    { label: "Facebook", href: "https://www.facebook.com/DaveAndBustersIND", icon: "facebook" },
+    { label: "YouTube", href: "https://www.youtube.com/@DaveAndBustersIndia", icon: "youtube" },
+];
+
+// Quick links — static, location-independent
+const QUICK_LINKS = [
+    { label: "Home", href: (loc) => `/${loc}/` },
+    { label: "Contact Us", href: (loc) => `/${loc}/about/contact` },
+    { label: "History", href: (loc) => `/${loc}/about/history` },
+    { label: "FAQ's", href: (loc) => `/${loc}/about/faq` },
+    // Privacy & Terms same for all locations
+    { label: "Privacy Policy", href: (loc) => `/${loc}/privacy-policy/` },
+    { label: "Terms of Use", href: (loc) => `/${loc}/terms-of-use/` },
+];
+
+// Games config — slug must match Strapi page slug
+const GAMES_CONFIG = [
+    { slug: "arcade", label: "Arcade", icon: "gamepad", path: (loc) => `/${loc}/play/arcade/` },
+    { slug: "nitro-bowling", label: "Nitro Bowling", icon: "circle-dot", path: (loc) => `/${loc}/play/nitro-bowling/` },
+    { slug: "hi-tech-darts", label: "Hi-Tech Darts", icon: "crosshair", path: (loc) => `/${loc}/play/hi-tech-darts/` },
+    { slug: "immersive-pool", label: "Immersive Pool", icon: "waves", path: (loc) => `/${loc}/play/immersive-pool/` },
+    { slug: "vr", label: "VR", icon: "glasses", path: (loc) => `/${loc}/play/vr/` },
+];
+
+// Page links config — slug must match Strapi page slug
+const PAGE_LINKS_CONFIG = [
+    { slug: "eat-n-drink", label: "Eat & Drink", path: (loc) => `/${loc}/eat-n-drink/` },
+    { slug: "watch", label: "Watch", path: (loc) => `/${loc}/watch/` },
+    { slug: "overview", label: "Parties & Events", path: (loc) => `/${loc}/parties/overview/` },
+    { slug: "all-offers", label: "Offers", path: (loc) => `/${loc}/offers/all-offer` },
+    { slug: "blog", label: "Blogs", path: (loc) => `/${loc}/about/blog` },
+];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function SocialIcon({ type }) {
@@ -90,54 +78,52 @@ function FooterHeading({ children }) {
 }
 
 // ─── Footer Component ─────────────────────────────────────────────────────────
-export default function Footer() {
+// Props:
+//   locationSlug — e.g. "bangalore"
+//   pages        — from getPagesByLocation() — array of { slug, title }
+//   locationData — from getLocationBySlug() — has address field
+export default function Footer({ locationSlug = "bangalore", pages = [], locationData = null }) {
+    const availableSlugs = new Set(pages.map((p) => p.slug));
+
+    // Address from Strapi location, fallback to static
+    const address = locationData?.address ||
+        "1st Floor, Mantri Avenue, KHB Games Village, Koramangala, Bangalore, Karnataka 560047";
+
+    // Filter games by available pages for this location
+    const games = GAMES_CONFIG.filter((g) => availableSlugs.has(g.slug));
+
+    // Filter page links by available pages
+    const pageLinks = PAGE_LINKS_CONFIG.filter((p) => availableSlugs.has(p.slug));
+
     return (
         <footer
             className="text-white pt-12 pb-4"
-            // .footer-dark: background linear #15189a (top) → #22d8ff (bottom)
             style={{ background: "linear-gradient(to bottom, #15189a, #22d8ff)" }}
         >
             <div className="max-w-screen-xl mx-auto px-6">
 
-                {/* ── Main grid ─────────────────────────────────────────────────── */}
+                {/* ── Main grid ─────────────────────────────────────────── */}
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-10 mb-10">
 
                     {/* Brand column */}
                     <div className="col-span-2 md:col-span-4 lg:col-span-1">
-                        <a href={content.logo.href} className="inline-block mb-5">
-                            <img
-                                src={content.logo.src}
-                                alt={content.logo.alt}
-                                className="h-12 w-auto"
-                            />
-                        </a>
+                        <Link href={`/${locationSlug}/`} className="inline-block mb-5">
+                            <img src={LOGO.src} alt={LOGO.alt} className="h-12 w-auto" />
+                        </Link>
 
+                        {/* Address — from Strapi location */}
                         <p className="text-sm leading-relaxed text-white/90 mb-6 max-w-xs">
-                            {content.address}
+                            {address}
                         </p>
 
-                        {/* Social icons
-                .social-icons ul li a:
-                  color: black, width/height: 45px, padding: 10px,
-                  border-radius: 50%, background: white, display: flex,
-                  align/justify: center
-                .social-icons a: margin: 0 15px (first: ml-0, last: mr-0) */}
-                        <ul className="flex items-center gap-0">
-                            {content.socials.map((s, i) => (
-                                <li
-                                    key={s.label}
-                                    className={`${i === 0 ? "ml-0" : "ml-[15px]"} ${i === content.socials.length - 1 ? "mr-0" : "mr-[15px]"
-                                        }`}
-                                    style={{ margin: `0 ${i === content.socials.length - 1 ? "0" : "15px"} 0 ${i === 0 ? "0" : "0"}` }}
-                                >
-                                    <a
-                                        href={s.href}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                        {/* Social icons */}
+                        <ul className="flex items-center gap-[15px]">
+                            {SOCIALS.map((s) => (
+                                <li key={s.label}>
+                                    <a href={s.href} target="_blank" rel="noopener noreferrer"
                                         aria-label={s.label}
                                         className="flex items-center justify-center rounded-full text-black bg-white transition-opacity hover:opacity-80"
-                                        style={{ width: 45, height: 45, padding: 10, boxSizing: "border-box" }}
-                                    >
+                                        style={{ width: 45, height: 45, padding: 10, boxSizing: "border-box" }}>
                                         <SocialIcon type={s.icon} />
                                     </a>
                                 </li>
@@ -145,54 +131,74 @@ export default function Footer() {
                         </ul>
                     </div>
 
-                    {/* Quick Links */}
+                    {/* Quick Links — static with dynamic location slug */}
                     <div>
-                        <FooterHeading>{content.quickLinks.heading}</FooterHeading>
+                        <FooterHeading>Quick Links</FooterHeading>
                         <ul className="space-y-2.5">
-                            {content.quickLinks.items.map((item) => (
+                            {QUICK_LINKS.map((item) => (
                                 <li key={item.label}>
-                                    <a href={item.href} className="text-sm text-white/90 hover:text-white transition-colors">
+                                    <Link href={item.href(locationSlug)}
+                                        className="text-sm text-white/90 hover:text-white transition-colors">
                                         {item.label}
-                                    </a>
+                                    </Link>
                                 </li>
                             ))}
                         </ul>
                     </div>
 
-                    {/* Games */}
+                    {/* Games — filtered by Strapi pages */}
                     <div>
-                        <FooterHeading>{content.games.heading}</FooterHeading>
+                        <FooterHeading>Games</FooterHeading>
                         <ul className="space-y-2.5">
-                            {content.games.items.map((item) => (
-                                <li key={item.label}>
-                                    <a href={item.href} className="flex items-center gap-2 text-sm text-white/90 hover:text-white transition-colors">
+                            {games.length > 0 ? games.map((item) => (
+                                <li key={item.slug}>
+                                    <Link href={item.path(locationSlug)}
+                                        className="flex items-center gap-2 text-sm text-white/90 hover:text-white transition-colors">
                                         <GameIcon type={item.icon} />
                                         {item.label}
-                                    </a>
+                                    </Link>
+                                </li>
+                            )) : GAMES_CONFIG.map((item) => (
+                                // Fallback — show all if no pages from Strapi yet
+                                <li key={item.slug}>
+                                    <Link href={item.path(locationSlug)}
+                                        className="flex items-center gap-2 text-sm text-white/90 hover:text-white transition-colors">
+                                        <GameIcon type={item.icon} />
+                                        {item.label}
+                                    </Link>
                                 </li>
                             ))}
                         </ul>
                     </div>
 
-                    {/* Page Links */}
+                    {/* Page Links — filtered by Strapi pages */}
                     <div>
-                        <FooterHeading>{content.pageLinks.heading}</FooterHeading>
+                        <FooterHeading>Page Links</FooterHeading>
                         <ul className="space-y-2.5">
-                            {content.pageLinks.items.map((item) => (
-                                <li key={item.label}>
-                                    <a href={item.href} className="text-sm text-white/90 hover:text-white transition-colors">
+                            {pageLinks.length > 0 ? pageLinks.map((item) => (
+                                <li key={item.slug}>
+                                    <Link href={item.path(locationSlug)}
+                                        className="text-sm text-white/90 hover:text-white transition-colors">
                                         {item.label}
-                                    </a>
+                                    </Link>
+                                </li>
+                            )) : PAGE_LINKS_CONFIG.map((item) => (
+                                // Fallback — show all if no pages from Strapi yet
+                                <li key={item.slug}>
+                                    <Link href={item.path(locationSlug)}
+                                        className="text-sm text-white/90 hover:text-white transition-colors">
+                                        {item.label}
+                                    </Link>
                                 </li>
                             ))}
                         </ul>
                     </div>
                 </div>
 
-                {/* ── Divider ───────────────────────────────────────────────────── */}
+                {/* ── Divider + copyright ───────────────────────────────── */}
                 <div className="border-t border-white/20 pt-4">
                     <p className="text-center text-xs text-white/80">
-                        {content.copyright}
+                        © 2026 Malpani Arcade Private Limited
                     </p>
                 </div>
             </div>

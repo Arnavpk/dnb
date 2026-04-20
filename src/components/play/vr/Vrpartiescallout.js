@@ -15,7 +15,7 @@ const FALLBACK = {
 //             subtitle → body text (optional)
 //             link     → CTA href
 //             cta_text → CTA button label
-export default function VRPartiesCallout({ section }) {
+export default function VRPartiesCallout({ section, location }) {
     const heading = section?.title || FALLBACK.heading;
     const body = section?.subtitle ?? null;
     const ctaHref = section?.link || FALLBACK.ctaHref;
@@ -33,7 +33,7 @@ export default function VRPartiesCallout({ section }) {
                             {heading}
                         </h3>
                         <Link
-                            href={ctaHref}
+                            href={`/${location}/bookings/`}
                             className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-white text-sm font-bold uppercase tracking-wide transition-colors"
                             style={{ background: "linear-gradient(180deg, #040651, #15189a)" }}
                         >

@@ -33,17 +33,30 @@ export default function TermsConditions({ section }) {
                     </h3>
 
                     {hasStrapi ? (
-                        // Render Strapi rich-text body directly
-                        <div
-                            className="prose prose-sm max-w-none text-[#232323]"
-                            dangerouslySetInnerHTML={{ __html: section.body }}
-                        />
+                        <ul className="space-y-3">
+                            {section.body
+                                // Strip any HTML tags first to get plain text
+                                .replace(/<[^>]+>/g, "")
+                                // Split by newlines
+                                .split("\n")
+                                // Clean up each line — remove leading "- " or "• "
+                                .map((line) => line.replace(/^[\-•]\s*/, "").trim())
+                                // Remove empty lines
+                                .filter((line) => line.length > 0)
+                                .map((line, i) => (
+                                    <li key={i} className="flex items-start gap-3 text-sm md:text-base text-black leading-relaxed">
+                                        <span className="mt-2 shrink-0 w-2 h-2 rounded-full bg-[#ff6f00]" />
+                                        {line}
+                                    </li>
+                                ))
+                            }
+                        </ul>
                     ) : (
-                        <ul className="flex flex-col gap-5 list-none ps-0 ms-0">
-                            {FALLBACK_ITEMS.map((item, i) => (
-                                <li key={i} className="flex items-start gap-3">
-                                    <span className="mt-1.5 w-2 h-2 rounded-full bg-[#ff6f00] shrink-0" />
-                                    <span className="text-[#232323] text-sm md:text-base leading-relaxed">{item}</span>
+                        <ul className="space-y-3">
+                            {FALLBACK_TERMS.map((term, i) => (
+                                <li key={i} className="flex items-start gap-3 text-sm md:text-base text-black leading-relaxed">
+                                    <span className="mt-2 shrink-0 w-2 h-2 rounded-full bg-[#ff6f00]" />
+                                    {term}
                                 </li>
                             ))}
                         </ul>

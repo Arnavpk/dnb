@@ -30,7 +30,7 @@ export default async function ArcadePage({ params }) {
             <ArcadePromo section={textImageSections[0]} />
             <CoreGames section={arcadeGamesSection} />
             <GameGallery section={arcadeImagesSection} />
-            <PartiesCallout section={bannerSection} />
+            <PartiesCallout section={bannerSection} location={location} />
         </>
     );
 }
