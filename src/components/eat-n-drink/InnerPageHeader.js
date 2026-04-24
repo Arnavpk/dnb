@@ -42,7 +42,7 @@ export default function InnerPageHeader({ section = null, location = "" }) {
                 <div className="flex flex-col items-center text-center gap-5">
                     <h1
                         className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight max-w-3xl uppercase"
-                        style={{ fontFamily: '"Libre Franklin", sans-serif' }}
+                        style={{ fontFamily: '"DINBuster", sans-serif' }}
                     >
                         {title}
                     </h1>
