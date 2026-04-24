@@ -66,7 +66,8 @@ function normalizeRow(section, index) {
 function ImageTextRow({ row, isLast, isFallback }) {
     const textContent = (
         <div className="flex flex-col justify-center h-full">
-            <h3 className="text-2xl md:text-3xl font-extrabold text-[#15179a] uppercase leading-tight">
+            <h3 className="text-[30px] md:text-[45px] font-extrabold text-[#15179a] uppercase leading-tight"
+                style={{ fontFamily: '"DINBuster", sans-serif' }}>
                 {row.headline}
             </h3>
             {/* Fallback rows use a plain string; Strapi rows use blocks */}

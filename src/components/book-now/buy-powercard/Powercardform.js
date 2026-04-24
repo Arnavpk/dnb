@@ -3,6 +3,11 @@
 import { useState, useRef } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+// import axios from "axios";
+// import { headers } from "next/headers";
+import { getToken } from "@/app/services/tokenservice";
+import { useEffect } from "react";
+import axiosInstance from "@/app/services/axiosinstance";
 
 // ─── CMS-ready content object ────────────────────────────────────────────────
 // mode: "buy" → no card number field, uses BUY images
@@ -10,21 +15,21 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 // Pass mode="recharge" when using this for the recharge page
 
 const BUY_CHIPS = [
-  { id: "16", image: "https://daveandbustersindia.com/book/images/product_image/20260216161850_999 Chips.jpg",   alt: "INR 999 (999 Chips) - 10% off",              price: 999,   label: "₹999",    chips: "999 Chips",    bonus: "" },
-  { id: "32", image: "https://daveandbustersindia.com/book/images/product_image/20260216162222_2000 Chips.jpg",  alt: "INR 2,000 (2,000 Chips) - 10% off",          price: 2000,  label: "₹2,000",  chips: "2,000 Chips",  bonus: "" },
-  { id: "33", image: "https://daveandbustersindia.com/book/images/product_image/20260216162242_3000 Chips.jpg",  alt: "INR 3000 (3,000 Chips 600 Bonus) - 10% off", price: 3000,  label: "₹3,000",  chips: "3,000 Chips",  bonus: "600 Bonus" },
-  { id: "24", image: "https://daveandbustersindia.com/book/images/product_image/20260216162641_5000 Chips.jpg",  alt: "INR 5000 (5,000 Chips 1,500 Bonus)",         price: 5000,  label: "₹5,000",  chips: "5,000 Chips",  bonus: "1,500 Bonus" },
-  { id: "22", image: "https://daveandbustersindia.com/book/images/product_image/20260216162717_7000 Chips.jpg",  alt: "INR 7000 (7,000 Chips 2800 Bonus)",          price: 7000,  label: "₹7,000",  chips: "7,000 Chips",  bonus: "2,800 Bonus" },
-  { id: "23", image: "https://daveandbustersindia.com/book/images/product_image/20260216162747_10000 Chips.jpg", alt: "INR 10000 (10,000 Chips 4,000 Bonus)",       price: 10000, label: "₹10,000", chips: "10,000 Chips", bonus: "4,000 Bonus" },
+  { id: "16", image: "https://daveandbustersindia.com/book/images/product_image/20260216161850_999 Chips.jpg", alt: "INR 999 (999 Chips) - 10% off", price: 999, label: "₹999", chips: "999 Chips", bonus: "" },
+  { id: "32", image: "https://daveandbustersindia.com/book/images/product_image/20260216162222_2000 Chips.jpg", alt: "INR 2,000 (2,000 Chips) - 10% off", price: 2000, label: "₹2,000", chips: "2,000 Chips", bonus: "" },
+  { id: "33", image: "https://daveandbustersindia.com/book/images/product_image/20260216162242_3000 Chips.jpg", alt: "INR 3000 (3,000 Chips 600 Bonus) - 10% off", price: 3000, label: "₹3,000", chips: "3,000 Chips", bonus: "600 Bonus" },
+  { id: "24", image: "https://daveandbustersindia.com/book/images/product_image/20260216162641_5000 Chips.jpg", alt: "INR 5000 (5,000 Chips 1,500 Bonus)", price: 5000, label: "₹5,000", chips: "5,000 Chips", bonus: "1,500 Bonus" },
+  { id: "22", image: "https://daveandbustersindia.com/book/images/product_image/20260216162717_7000 Chips.jpg", alt: "INR 7000 (7,000 Chips 2800 Bonus)", price: 7000, label: "₹7,000", chips: "7,000 Chips", bonus: "2,800 Bonus" },
+  { id: "23", image: "https://daveandbustersindia.com/book/images/product_image/20260216162747_10000 Chips.jpg", alt: "INR 10000 (10,000 Chips 4,000 Bonus)", price: 10000, label: "₹10,000", chips: "10,000 Chips", bonus: "4,000 Bonus" },
 ];
 
 const RECHARGE_CHIPS = [
-  { id: "41", image: "https://daveandbustersindia.com/book/images/product_image/20260216163223_999 Chips.jpg",   alt: "Recharge INR 999 (999 Chips)",              price: 999,   label: "₹999",    chips: "999 Chips",    bonus: "" },
-  { id: "3",  image: "https://daveandbustersindia.com/book/images/product_image/20260216163238_2000 Chips.jpg",  alt: "Recharge INR 2000 (2000 Chips)",            price: 2000,  label: "₹2,000",  chips: "2,000 Chips",  bonus: "" },
-  { id: "4",  image: "https://daveandbustersindia.com/book/images/product_image/20260216163254_3000 Chips.jpg",  alt: "Recharge INR 3000 (3000 Chips 600 Bonus)",  price: 3000,  label: "₹3,000",  chips: "3,000 Chips",  bonus: "600 Bonus" },
-  { id: "44", image: "https://daveandbustersindia.com/book/images/product_image/20260216163311_5000 Chips.jpg",  alt: "Recharge INR 5000 (5000 Chips 1500 Bonus)", price: 5000,  label: "₹5,000",  chips: "5,000 Chips",  bonus: "1,500 Bonus" },
-  { id: "7",  image: "https://daveandbustersindia.com/book/images/product_image/20260216163335_7000 Chips.jpg",  alt: "Recharge INR 7000 (7000 Chips 2800 Bonus)", price: 7000,  label: "₹7,000",  chips: "7,000 Chips",  bonus: "2,800 Bonus" },
-  { id: "2",  image: "https://daveandbustersindia.com/book/images/product_image/20260216163351_10000 Chips.jpg", alt: "Recharge INR 10000 (10000 Chips 4000 Bonus)",price: 10000, label: "₹10,000", chips: "10,000 Chips", bonus: "4,000 Bonus" },
+  { id: "41", image: "https://daveandbustersindia.com/book/images/product_image/20260216163223_999 Chips.jpg", alt: "Recharge INR 999 (999 Chips)", price: 999, label: "₹999", chips: "999 Chips", bonus: "" },
+  { id: "3", image: "https://daveandbustersindia.com/book/images/product_image/20260216163238_2000 Chips.jpg", alt: "Recharge INR 2000 (2000 Chips)", price: 2000, label: "₹2,000", chips: "2,000 Chips", bonus: "" },
+  { id: "4", image: "https://daveandbustersindia.com/book/images/product_image/20260216163254_3000 Chips.jpg", alt: "Recharge INR 3000 (3000 Chips 600 Bonus)", price: 3000, label: "₹3,000", chips: "3,000 Chips", bonus: "600 Bonus" },
+  { id: "44", image: "https://daveandbustersindia.com/book/images/product_image/20260216163311_5000 Chips.jpg", alt: "Recharge INR 5000 (5000 Chips 1500 Bonus)", price: 5000, label: "₹5,000", chips: "5,000 Chips", bonus: "1,500 Bonus" },
+  { id: "7", image: "https://daveandbustersindia.com/book/images/product_image/20260216163335_7000 Chips.jpg", alt: "Recharge INR 7000 (7000 Chips 2800 Bonus)", price: 7000, label: "₹7,000", chips: "7,000 Chips", bonus: "2,800 Bonus" },
+  { id: "2", image: "https://daveandbustersindia.com/book/images/product_image/20260216163351_10000 Chips.jpg", alt: "Recharge INR 10000 (10000 Chips 4000 Bonus)", price: 10000, label: "₹10,000", chips: "10,000 Chips", bonus: "4,000 Bonus" },
 ];
 
 const content = {
@@ -101,9 +106,9 @@ function calcAmounts(price = 0) {
 
 // ─── Step data ────────────────────────────────────────────────────────────────
 const STEPS = [
-  { key: "chips",    num: 1, title: "Chips",   desc: "Choose package" },
+  { key: "chips", num: 1, title: "Chips", desc: "Choose package" },
   { key: "personal", num: 2, title: "Details", desc: "Name, phone & email" },
-  { key: "summary",  num: 3, title: "Pay",     desc: "Confirm and pay" },
+  { key: "summary", num: 3, title: "Pay", desc: "Confirm and pay" },
 ];
 function stepIndex(s) { return STEPS.findIndex((x) => x.key === s); }
 
@@ -114,7 +119,7 @@ function MobileStepBar({ step }) {
     <div className="flex items-center justify-between mb-6 lg:hidden">
       {STEPS.map((s, i) => {
         const isActive = step === s.key;
-        const isDone   = i < currentIdx;
+        const isDone = i < currentIdx;
         return (
           <div key={s.key} className="flex flex-col items-center gap-1 flex-1">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-extrabold transition-all
@@ -160,26 +165,41 @@ function BackBtn({ onClick }) {
 // Props:
 //   mode: "buy" (default) | "recharge"
 export default function PowerCardForm({ mode = "buy", location = "bangalore" }) {
-  const chips       = mode === "recharge" ? RECHARGE_CHIPS : BUY_CHIPS;
-  const isRecharge  = mode === "recharge";
+  const chips = mode === "recharge" ? RECHARGE_CHIPS : BUY_CHIPS;
+  const isRecharge = mode === "recharge";
 
-  const [step, setStep]           = useState("chips");
-  const [selectedChip, setChip]   = useState(null);
-  const [cardNumber, setCardNum]  = useState("");
-  const [personal, setPersonal]   = useState({ name: "", phone: "", email: "", acceptedTerms: true });
-  const [status, setStatus]       = useState("idle");
-  const [tncOpen, setTncOpen]     = useState(false);
-  const [ppOpen, setPpOpen]       = useState(false);
+  const [step, setStep] = useState("chips");
+  const [selectedChip, setChip] = useState(null);
+  const [cardNumber, setCardNum] = useState("");
+  const [personal, setPersonal] = useState({ name: "", phone: "", email: "", acceptedTerms: true });
+  const [status, setStatus] = useState("idle");
+  const [tncOpen, setTncOpen] = useState(false);
+  const [ppOpen, setPpOpen] = useState(false);
   const scrollRef = useRef(null);
+
+
+  useEffect(() => {
+
+
+    const fetchData = async () => {
+      const token = getToken();
+      console.log("Token in PowerCardForm:", token);
+      const response = await axiosInstance.get('https://daveandbustersindia.com/nucleus_api/get_games.php');
+      console.log("API response:", response.data);
+    }
+    fetchData();
+  }, []);
+
+
 
   const setP = (key) => (e) => setPersonal((f) => ({ ...f, [key]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
 
-  const chip          = chips.find((c) => c.id === selectedChip);
+  const chip = chips.find((c) => c.id === selectedChip);
   const personalValid = personal.name && personal.phone.length === 10 && personal.email && personal.acceptedTerms;
   const { base, cgst, sgst, total } = calcAmounts(chip?.price);
 
-  const scrollLeft  = () => scrollRef.current?.scrollBy({ left: -220, behavior: "smooth" });
-  const scrollRight = () => scrollRef.current?.scrollBy({ left: 220,  behavior: "smooth" });
+  const scrollLeft = () => scrollRef.current?.scrollBy({ left: -220, behavior: "smooth" });
+  const scrollRight = () => scrollRef.current?.scrollBy({ left: 220, behavior: "smooth" });
 
   const handleSubmit = async () => {
     setStatus("submitting");
@@ -376,7 +396,7 @@ export default function PowerCardForm({ mode = "buy", location = "bangalore" }) 
                   </div>
 
                   <div className="rounded-xl border border-[#e4e4e4] p-4 mb-5">
-                    <SummaryRow label="Subtotal"  value={`₹${base}`} />
+                    <SummaryRow label="Subtotal" value={`₹${base}`} />
                     <SummaryRow label="CGST (9%)" value={`₹${cgst}`} />
                     <SummaryRow label="SGST (9%)" value={`₹${sgst}`} />
                     <div className="flex items-center justify-between pt-3 mt-2 border-t border-[#e4e4e4]">
@@ -398,9 +418,9 @@ export default function PowerCardForm({ mode = "buy", location = "bangalore" }) 
             <div className="hidden lg:flex flex-col gap-4 justify-center">
               {STEPS.map((s) => {
                 const currentIdx = stepIndex(step);
-                const thisIdx    = stepIndex(s.key);
-                const isActive   = step === s.key;
-                const isDone     = thisIdx < currentIdx;
+                const thisIdx = stepIndex(s.key);
+                const isActive = step === s.key;
+                const isDone = thisIdx < currentIdx;
                 return (
                   <div key={s.key} className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all
                     ${isActive ? "border-[#ff6f00] bg-[#fff8f0]" : isDone ? "border-[#15189a]/30 bg-white" : "border-[#e4e4e4] bg-white opacity-40"}`}>

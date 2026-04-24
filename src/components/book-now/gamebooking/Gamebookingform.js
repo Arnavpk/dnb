@@ -1,21 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import axiosInstance from "@/app/services/axiosinstance";
+import { getGames, submitBooking } from "@/app/services/gamebookingservice";
 
 // ─── CMS-ready content object ────────────────────────────────────────────────
 const content = {
-    games: [
-        { value: "6", label: "Hi-tech Darts", slotDuration: 15 },
-        { value: "7", label: "Nitro Bowling", slotDuration: 15 },
-        { value: "8", label: "Immersive Pool", slotDuration: 30 },
-        // When API is ready, fetch games dynamically and pass as prop
-    ],
-    guestOptions: [1, 2, 3, 4, 5, 6],
-    // Venue open/close hours for slot generation
     venueOpen: "11:00",
     venueClose: "23:30",
-    // How many slots to show initially before "View More"
     initialSlotCount: 19,
     disclaimer:
         "You must be 18 years or older to purchase a rechargeable card at Dave & Buster's. All details will be sent to the phone number provided during registration.",
@@ -61,8 +54,7 @@ function SummaryRow({ label, value }) {
     );
 }
 
-// ─── Generate time slots between open and close hours ────────────────────────
-// Returns array of "HH:MM" strings spaced by `intervalMinutes`
+// ─── Generate time slots ──────────────────────────────────────────────────────
 function generateSlots(openTime, closeTime, intervalMinutes) {
     const slots = [];
     const [openH, openM] = openTime.split(":").map(Number);
@@ -73,7 +65,6 @@ function generateSlots(openTime, closeTime, intervalMinutes) {
     for (let t = openTotal; t <= closeTotal; t += intervalMinutes) {
         const h = Math.floor(t / 60);
         const m = t % 60;
-        // Format as 12-hour for display, keep 24h as value
         const display12 = `${h > 12 ? h - 12 : h === 0 ? 12 : h}:${m.toString().padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
         const value24 = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
         slots.push({ display: display12, value: value24 });
@@ -82,11 +73,10 @@ function generateSlots(openTime, closeTime, intervalMinutes) {
 }
 
 // ─── GST ─────────────────────────────────────────────────────────────────────
-const GAME_PRICES = { "6": 599, "7": 699, "8": 799 }; // per person — update when API ready
 const GST_RATE = 0.09;
 
-function calcAmounts(gameId, guests) {
-    const base = (GAME_PRICES[gameId] ?? 0) * (parseInt(guests) || 0);
+function calcAmounts(pricePerPerson, guests) {
+    const base = (pricePerPerson ?? 0) * (parseInt(guests) || 0);
     const cgst = Math.round(base * GST_RATE);
     const sgst = Math.round(base * GST_RATE);
     const total = base + cgst + sgst;
@@ -106,21 +96,38 @@ function stepIndex(step) {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function GameBookingForm({ games = null, location = "bangalore" }) {
-    // `games` prop — for when API is ready, pass fetched games array here.
-    // Falls back to content.games if not provided.
-    const gameList = games ?? content.games;
+// GameBookingForm.jsx
+export default function GameBookingForm({ locationId, location = "bangalore" }) {
+    // ── Games state (fetched from API) ────────────────────────────────────────
+    const [gameList, setGameList] = useState([]);
+    const [gamesLoading, setGamesLoading] = useState(true);
+    const [gamesError, setGamesError] = useState(null);
 
+
+
+    useEffect(() => {
+        const fetchGames = async () => {
+            setGamesLoading(true);
+            setGamesError(null);
+
+            try {
+                const games = await getGames(locationId);
+                setGameList(games);
+            } catch (err) {
+                console.error("Failed to fetch games:", err);
+                setGamesError("Unable to load games. Please try again.");
+            } finally {
+                setGamesLoading(false);
+            }
+        };
+        fetchGames();
+    }, [locationId]);
+
+
+    // ── Form state ────────────────────────────────────────────────────────────
     const [step, setStep] = useState("booking");
-
-    const [booking, setBooking] = useState({
-        game: "", date: "", guests: "", timeSlot: "",
-    });
-
-    const [personal, setPersonal] = useState({
-        name: "", phone: "", email: "", acceptedTerms: true,
-    });
-
+    const [booking, setBooking] = useState({ game: "", date: "", guests: "", timeSlot: "" });
+    const [personal, setPersonal] = useState({ name: "", phone: "", email: "", acceptedTerms: true });
     const [showAllSlots, setShowAllSlots] = useState(false);
     const [status, setStatus] = useState("idle");
 
@@ -131,41 +138,37 @@ export default function GameBookingForm({ games = null, location = "bangalore" }
             [key]: e.target.type === "checkbox" ? e.target.checked : e.target.value,
         }));
 
-    // Derive selected game object
     const selectedGame = gameList.find((g) => g.value === booking.game);
 
-    // Generate slots based on selected game's interval
-    const allSlots = useMemo(() => {
+    const guestOptions = useMemo(() => {
         if (!selectedGame) return [];
-        return generateSlots(
-            content.venueOpen,
-            content.venueClose,
-            selectedGame.slotDuration
-        );
+        const min = selectedGame.minGuests || 1;
+        const max = selectedGame.maxGuests || 6;
+        return Array.from({ length: max - min + 1 }, (_, i) => min + i);
     }, [selectedGame]);
 
-    const visibleSlots = showAllSlots
-        ? allSlots
-        : allSlots.slice(0, content.initialSlotCount);
+    const allSlots = useMemo(() => {
+        if (!selectedGame) return [];
+        return generateSlots(content.venueOpen, content.venueClose, selectedGame.slotDuration);
+    }, [selectedGame]);
 
-    // Validation
+    const visibleSlots = showAllSlots ? allSlots : allSlots.slice(0, content.initialSlotCount);
+
     const bookingValid = booking.game && booking.date && booking.guests;
     const slotValid = !!booking.timeSlot;
     const personalValid = personal.name && personal.phone.length === 10 && personal.email && personal.acceptedTerms;
 
-    const { base, cgst, sgst, total } = calcAmounts(booking.game, booking.guests);
+    // Use price from fetched game object instead of static map
+    const { base, cgst, sgst, total } = calcAmounts(selectedGame?.pricePerPerson ?? 0, booking.guests);
 
     const handleSubmit = async () => {
         setStatus("submitting");
         try {
-            const res = await fetch(content.apiAction, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...booking, ...personal }),
-            });
-            setStatus(res.ok ? "done" : "error");
-            if (res.ok) setStep("done");
-        } catch {
+            await submitBooking(booking, personal);
+            setStatus("done");
+            setStep("done");
+        } catch (err) {
+            console.error("Booking error:", err);
             setStatus("error");
         }
     };
@@ -191,7 +194,7 @@ export default function GameBookingForm({ games = null, location = "bangalore" }
                         style={{ boxShadow: "0 10px 40px rgba(0,0,0,0.08)" }}
                     >
 
-                        {/* ══ STEP 1: Game, Date, Guests ══════════════════════════ */}
+                        {/* ══ STEP 1 ══ */}
                         {step === "booking" && (
                             <>
                                 <h4 className="text-xl font-extrabold text-[#15189a] uppercase font-din mb-6 text-center">
@@ -201,27 +204,35 @@ export default function GameBookingForm({ games = null, location = "bangalore" }
                                 <div className="space-y-5">
                                     <div>
                                         <label className={labelCls}>Choose your game <Required /></label>
-                                        <CustomSelect
-                                            value={booking.game}
-                                            onChange={(e) => {
-                                                setB("game")(e);
-                                                setBooking((f) => ({ ...f, game: e.target.value, timeSlot: "" }));
-                                                setShowAllSlots(false);
-                                            }}
-                                            required
-                                        >
-                                            <option value="">Select Game</option>
-                                            {gameList.map((g) => (
-                                                <option key={g.value} value={g.value}>{g.label}</option>
-                                            ))}
-                                        </CustomSelect>
+
+                                        {/* Loading / error states for the dropdown */}
+                                        {gamesLoading ? (
+                                            <div className="w-full rounded-full border border-[#15189a]/30 bg-[#f5f6ff] px-4 py-3 text-sm text-[#15189a]/50">
+                                                Loading games…
+                                            </div>
+                                        ) : gamesError ? (
+                                            <p className="text-sm text-[#dc3232]">{gamesError}</p>
+                                        ) : (
+                                            <CustomSelect
+                                                value={booking.game}
+                                                onChange={(e) => {
+                                                    setBooking((f) => ({ ...f, game: e.target.value, timeSlot: "", guests: "" }));
+                                                    setShowAllSlots(false);
+                                                }}
+                                                required
+                                            >
+                                                <option value="">Select Game</option>
+                                                {gameList.map((g) => (
+                                                    <option key={g.value} value={g.value}>{g.label}</option>
+                                                ))}
+                                            </CustomSelect>
+                                        )}
                                     </div>
 
                                     <div>
                                         <label className={labelCls}>Select visit date <Required /></label>
                                         <input
-                                            type="date"
-                                            required
+                                            type="date" required
                                             min={new Date().toISOString().split("T")[0]}
                                             className={inputCls}
                                             value={booking.date}
@@ -233,7 +244,7 @@ export default function GameBookingForm({ games = null, location = "bangalore" }
                                         <label className={labelCls}>No. of guests <Required /></label>
                                         <CustomSelect value={booking.guests} onChange={setB("guests")} required>
                                             <option value="">Select no. of guests</option>
-                                            {content.guestOptions.map((n) => (
+                                            {guestOptions.map((n) => (
                                                 <option key={n} value={n}>{n} {n === 1 ? "Guest" : "Guests"}</option>
                                             ))}
                                         </CustomSelect>
@@ -242,7 +253,7 @@ export default function GameBookingForm({ games = null, location = "bangalore" }
 
                                 <button
                                     type="button"
-                                    disabled={!bookingValid}
+                                    disabled={!bookingValid || gamesLoading}
                                     onClick={() => { setShowAllSlots(false); setStep("slots"); }}
                                     className="w-full mt-8 py-3 rounded-full font-bold text-sm uppercase tracking-wide text-white transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
                                     style={{ background: "linear-gradient(180deg, #040651, #15189a)" }}
@@ -254,22 +265,16 @@ export default function GameBookingForm({ games = null, location = "bangalore" }
                             </>
                         )}
 
-                        {/* ══ STEP 2: Time Slot ════════════════════════════════════ */}
+                        {/* ══ STEP 2 ══ */}
                         {step === "slots" && (
                             <>
-                                <button
-                                    type="button"
-                                    onClick={() => setStep("booking")}
-                                    className="text-sm text-[#15189a] font-semibold mb-5 flex items-center gap-1 hover:underline"
-                                >
+                                <button type="button" onClick={() => setStep("booking")}
+                                    className="text-sm text-[#15189a] font-semibold mb-5 flex items-center gap-1 hover:underline">
                                     ← Back
                                 </button>
 
-                                {/* Game name + slot duration badge — matches source HTML */}
                                 <div className="flex items-center gap-3 mb-5">
-                                    <h4 className="text-xl font-extrabold text-[#15189a] font-din">
-                                        {selectedGame?.label}
-                                    </h4>
+                                    <h4 className="text-xl font-extrabold text-[#15189a] font-din">{selectedGame?.label}</h4>
                                     <span className="text-sm font-bold text-[#ff00bd] bg-[#ff00bd]/10 px-3 py-0.5 rounded-full">
                                         {selectedGame?.slotDuration} Minutes
                                     </span>
@@ -280,14 +285,11 @@ export default function GameBookingForm({ games = null, location = "bangalore" }
                                     <strong className="text-[#15189a]">{booking.date}</strong>
                                 </p>
 
-                                {/* Slot grid — wrapping buttons */}
                                 <div className="flex flex-wrap gap-2">
                                     {visibleSlots.map((slot) => {
                                         const isSelected = booking.timeSlot === slot.value;
                                         return (
-                                            <button
-                                                key={slot.value}
-                                                type="button"
+                                            <button key={slot.value} type="button"
                                                 onClick={() => setBooking((f) => ({ ...f, timeSlot: slot.value }))}
                                                 className={`px-3 py-2 rounded-lg text-sm font-bold border-2 transition-all duration-200
                                                     ${isSelected
@@ -300,19 +302,14 @@ export default function GameBookingForm({ games = null, location = "bangalore" }
                                         );
                                     })}
 
-                                    {/* View More — shown when slots are truncated */}
                                     {!showAllSlots && allSlots.length > content.initialSlotCount && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowAllSlots(true)}
-                                            className="px-3 py-2 rounded-lg text-sm font-bold border-2 border-dashed border-[#ff6f00] text-[#ff6f00] hover:bg-[#fff8f0] transition-all"
-                                        >
+                                        <button type="button" onClick={() => setShowAllSlots(true)}
+                                            className="px-3 py-2 rounded-lg text-sm font-bold border-2 border-dashed border-[#ff6f00] text-[#ff6f00] hover:bg-[#fff8f0] transition-all">
                                             VIEW MORE
                                         </button>
                                     )}
                                 </div>
 
-                                {/* Selected slot confirmation pill */}
                                 {booking.timeSlot && (
                                     <div className="mt-5 flex items-center gap-2 text-sm">
                                         <span className="text-[#717580]">Selected:</span>
@@ -322,9 +319,7 @@ export default function GameBookingForm({ games = null, location = "bangalore" }
                                     </div>
                                 )}
 
-                                <button
-                                    type="button"
-                                    disabled={!slotValid}
+                                <button type="button" disabled={!slotValid}
                                     onClick={() => setStep("personal")}
                                     className="w-full mt-8 py-3 rounded-full font-bold text-sm uppercase tracking-wide text-white transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
                                     style={{ background: "linear-gradient(180deg, #040651, #15189a)" }}
@@ -336,14 +331,11 @@ export default function GameBookingForm({ games = null, location = "bangalore" }
                             </>
                         )}
 
-                        {/* ══ STEP 3: Personal Details ══════════════════════════════ */}
+                        {/* ══ STEP 3 ══ */}
                         {step === "personal" && (
                             <>
-                                <button
-                                    type="button"
-                                    onClick={() => setStep("slots")}
-                                    className="text-sm text-[#15189a] font-semibold mb-5 flex items-center gap-1 hover:underline"
-                                >
+                                <button type="button" onClick={() => setStep("slots")}
+                                    className="text-sm text-[#15189a] font-semibold mb-5 flex items-center gap-1 hover:underline">
                                     ← Back
                                 </button>
 
@@ -358,11 +350,9 @@ export default function GameBookingForm({ games = null, location = "bangalore" }
                                     </div>
                                     <div>
                                         <label className={labelCls}>Mobile Number <Required /></label>
-                                        <input
-                                            type="tel" required placeholder="Enter 10 digit mobile number"
+                                        <input type="tel" required placeholder="Enter 10 digit mobile number"
                                             maxLength={10} pattern="\d{10}" className={inputCls}
-                                            value={personal.phone} onChange={setP("phone")}
-                                        />
+                                            value={personal.phone} onChange={setP("phone")} />
                                     </div>
                                     <div>
                                         <label className={labelCls}>Email Address <Required /></label>
@@ -380,9 +370,7 @@ export default function GameBookingForm({ games = null, location = "bangalore" }
                                     </div>
                                 </div>
 
-                                <button
-                                    type="button"
-                                    disabled={!personalValid}
+                                <button type="button" disabled={!personalValid}
                                     onClick={() => setStep("summary")}
                                     className="w-full mt-8 py-3 rounded-full font-bold text-sm uppercase tracking-wide text-white transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
                                     style={{ background: "linear-gradient(180deg, #040651, #15189a)" }}
@@ -394,14 +382,11 @@ export default function GameBookingForm({ games = null, location = "bangalore" }
                             </>
                         )}
 
-                        {/* ══ STEP 4: Summary + Pay ════════════════════════════════ */}
+                        {/* ══ STEP 4 ══ */}
                         {step === "summary" && (
                             <>
-                                <button
-                                    type="button"
-                                    onClick={() => setStep("personal")}
-                                    className="text-sm text-[#15189a] font-semibold mb-5 flex items-center gap-1 hover:underline"
-                                >
+                                <button type="button" onClick={() => setStep("personal")}
+                                    className="text-sm text-[#15189a] font-semibold mb-5 flex items-center gap-1 hover:underline">
                                     ← Back
                                 </button>
 
@@ -434,9 +419,7 @@ export default function GameBookingForm({ games = null, location = "bangalore" }
                                     <p className="text-[#dc3232] text-sm mb-3">Something went wrong. Please try again.</p>
                                 )}
 
-                                <button
-                                    type="button"
-                                    disabled={status === "submitting"}
+                                <button type="button" disabled={status === "submitting"}
                                     onClick={handleSubmit}
                                     className="w-full py-3 rounded-full font-bold text-sm uppercase tracking-wide text-black transition-all duration-300 disabled:opacity-60"
                                     style={{ background: "linear-gradient(to bottom, #ff6f00, #FFBA00)" }}
@@ -457,15 +440,12 @@ export default function GameBookingForm({ games = null, location = "bangalore" }
                             const isActive = step === s.key;
                             const isDone = thisIdx < currentIdx;
                             return (
-                                <div
-                                    key={s.key}
+                                <div key={s.key}
                                     className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all
-                    ${isActive ? "border-[#ff6f00] bg-[#fff8f0]" : isDone ? "border-[#15189a]/30 bg-white" : "border-[#e4e4e4] bg-white opacity-40"}`}
+                                        ${isActive ? "border-[#ff6f00] bg-[#fff8f0]" : isDone ? "border-[#15189a]/30 bg-white" : "border-[#e4e4e4] bg-white opacity-40"}`}
                                 >
-                                    <div
-                                        className={`w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-sm shrink-0
-                      ${isActive ? "bg-[#ff6f00] text-white" : isDone ? "bg-[#15189a] text-white" : "bg-[#e4e4e4] text-[#717580]"}`}
-                                    >
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-sm shrink-0
+                                        ${isActive ? "bg-[#ff6f00] text-white" : isDone ? "bg-[#15189a] text-white" : "bg-[#e4e4e4] text-[#717580]"}`}>
                                         {isDone ? "✓" : s.num}
                                     </div>
                                     <div>
@@ -476,7 +456,6 @@ export default function GameBookingForm({ games = null, location = "bangalore" }
                             );
                         })}
                     </div>
-
                 </div>
 
                 {/* ── Disclaimer ──────────────────────────────────────────────── */}

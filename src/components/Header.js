@@ -77,11 +77,11 @@ const LOGO = {
     alt: "Dave & Buster Logo",
 };
 
-const BOOK_NOW_ITEMS = [
+const getBookNowItems = (loc) => [
     { label: "🍽️ Reserve a Table", href: "#", modal: "bookatableform" },
-    { label: "🎮 Book Games", href: "/banglore/book-now/gamebooking" },
-    { label: "💳 Buy Power Card", href: "/banglore/book-now/powercard/buy" },
-    { label: "💳 Recharge Power Card", href: "/banglore/book-now/powercard/recharge" },
+    { label: "🎮 Book Games", href: `/${loc}/book-now/gamebooking` },
+    { label: "💳 Buy Power Card", href: `/${loc}/book-now/powercard/buy` },
+    { label: "💳 Recharge Power Card", href: `/${loc}/book-now/powercard/recharge` },
 ];
 
 const CITY_LABELS = {
@@ -137,7 +137,7 @@ function NavDropdown({ item, alignRight = false }) {
             <button
                 type="button"
                 className="flex items-center gap-1 text-[#15189a] py-2"
-                style={{ fontFamily: '"Libre Franklin", sans-serif', fontWeight: 700, fontSize: "20px" }}
+                style={{ fontWeight: 700, fontSize: "20px" }}
                 onClick={() => setOpen((o) => !o)}
             >
                 {item.label}
@@ -161,19 +161,20 @@ function NavDropdown({ item, alignRight = false }) {
 }
 
 // ─── Book Now Dropdown ────────────────────────────────────────────────────────
-function BookNowDropdown({ onReserve }) {
+function BookNowDropdown({ onReserve, locationSlug }) {
     const [open, setOpen] = useState(false);
+    const items = getBookNowItems(locationSlug);
     return (
         <div className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
             <button type="button" onClick={() => setOpen((o) => !o)}
                 className="flex items-center gap-2 text-[#15189a] whitespace-nowrap"
-                style={{ border: "4px solid #15189a", borderRadius: "50px", padding: "6px 16px", backgroundColor: "transparent", fontFamily: '"Libre Franklin", sans-serif', fontWeight: 600, fontSize: "18px" }}>
+                style={{ border: "4px solid #15189a", borderRadius: "50px", padding: "6px 16px", backgroundColor: "transparent", fontWeight: 600, fontSize: "18px" }}>
                 <span>Book Now</span>
                 <Calendar size={18} strokeWidth={2} />
             </button>
             {open && (
                 <ul className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-xl min-w-[220px] z-50 py-2">
-                    {BOOK_NOW_ITEMS.map((item) => (
+                    {items.map((item) => (
                         <li key={item.label}>
                             {item.modal === "bookatableform" ? (
                                 <button type="button" onClick={() => { onReserve(); setOpen(false); }}
@@ -196,8 +197,9 @@ function BookNowDropdown({ onReserve }) {
 }
 
 // ─── Mobile Menu ──────────────────────────────────────────────────────────────
-function MobileMenu({ open, onClose, onReserve, onCitySelect, nav, cityLabel }) {
+function MobileMenu({ open, onClose, onReserve, onCitySelect, nav, cityLabel, locationSlug }) {
     const [expandedItem, setExpandedItem] = useState(null);
+    const items = getBookNowItems(locationSlug);
     const [bookOpen, setBookOpen] = useState(false);
 
     if (!open) return null;
@@ -322,7 +324,7 @@ export default function Navbar({ pages = [], locationSlug: initialSlug }) {
 
                 {/* ── DESKTOP (xl+) ─────────────────────────────────────── */}
                 <div className="hidden xl:flex items-center justify-between w-full mx-auto"
-                    style={{ height: "160px", maxWidth: "1408px", paddingLeft: "15px", paddingRight: "15px", fontFamily: '"Libre Franklin", sans-serif' }}>
+                    style={{ height: "160px", maxWidth: "1408px", paddingLeft: "15px", paddingRight: "15px" }}>
 
                     <Link href={`/${locationSlug}/`} className="flex-none flex items-center"
                         style={{ padding: "0 15px", alignSelf: "stretch", marginTop: "-20px", marginBottom: "-20px" }}>
@@ -338,12 +340,12 @@ export default function Navbar({ pages = [], locationSlug: initialSlug }) {
                             <div className="flex items-center justify-between" style={{ gap: "16px", marginBottom: "0.75rem" }}>
                                 <button type="button" onClick={() => setCityOpen(true)}
                                     className="flex items-center gap-2 font-medium text-white whitespace-nowrap cursor-pointer"
-                                    style={{ background: "linear-gradient(180deg, #040651, #15189a)", borderRadius: "50px", padding: "6px 16px", fontFamily: '"Libre Franklin", sans-serif', fontSize: "18px" }}>
+                                    style={{ background: "linear-gradient(180deg, #040651, #15189a)", borderRadius: "50px", padding: "6px 16px", fontSize: "18px" }}>
                                     <span>{cityLabel}</span>
                                     <MapPin size={16} strokeWidth={2} />
                                 </button>
 
-                                <BookNowDropdown onReserve={() => setReserveOpen(true)} />
+                                <BookNowDropdown onReserve={() => setReserveOpen(true)} locationSlug={locationSlug} />
 
                                 <div>
                                     {searchOpen ? (
@@ -354,7 +356,7 @@ export default function Navbar({ pages = [], locationSlug: initialSlug }) {
                                                 value={searchQuery}
                                                 onChange={(e) => setSearchQuery(e.target.value)}
                                                 className="bg-transparent text-[#15189a] text-sm outline-none w-36"
-                                                style={{ fontFamily: '"Libre Franklin", sans-serif', fontWeight: 700 }} />
+                                                style={{ fontWeight: 700 }} />
                                             <button type="button" onClick={() => setSearchOpen(false)}>
                                                 <X size={15} className="text-[#15189a]" />
                                             </button>
@@ -362,7 +364,7 @@ export default function Navbar({ pages = [], locationSlug: initialSlug }) {
                                     ) : (
                                         <button type="button" onClick={() => setSearchOpen(true)}
                                             className="flex items-center gap-2 text-[#15189a]"
-                                            style={{ fontFamily: '"Libre Franklin", sans-serif', fontWeight: 700, fontSize: "18px" }}>
+                                            style={{ fontWeight: 700, fontSize: "18px" }}>
                                             <Search size={18} strokeWidth={2.5} />
                                             <span>Search</span>
                                         </button>
@@ -372,7 +374,7 @@ export default function Navbar({ pages = [], locationSlug: initialSlug }) {
 
                             <nav style={{ alignSelf: "stretch" }}>
                                 <ul className="flex items-center justify-between p-0 m-0 list-none"
-                                    style={{ columnGap: "4rem", marginLeft: 0, alignSelf: "stretch", alignItems: "center", fontFamily: '"Libre Franklin", sans-serif' }}>
+                                    style={{ columnGap: "4rem", marginLeft: 0, alignSelf: "stretch", alignItems: "center" }}>
                                     {nav.map((item, index) =>
                                         item.children ? (
                                             <NavDropdown key={item.label} item={item} alignRight={index >= nav.length - 2} />
@@ -380,7 +382,7 @@ export default function Navbar({ pages = [], locationSlug: initialSlug }) {
                                             <li key={item.label}>
                                                 <Link href={item.href}
                                                     className="block text-[#15189a] py-1"
-                                                    style={{ fontFamily: '"Libre Franklin", sans-serif', fontWeight: 700, fontSize: "20px" }}>
+                                                    style={{ fontWeight: 700, fontSize: "20px" }}>
                                                     {item.label}
                                                 </Link>
                                             </li>
@@ -460,6 +462,7 @@ export default function Navbar({ pages = [], locationSlug: initialSlug }) {
                 onCitySelect={() => { setMobileOpen(false); setCityOpen(true); }}
                 nav={nav}
                 cityLabel={cityLabel}
+                locationSlug={locationSlug}
             />
 
             <CitySelectModal
